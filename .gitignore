@@ -2,6 +2,15 @@
 .react-router/
 .generated/
 
+# Build output
+.output/
+build/
+.deploy-tmp/
+.netlify/
+*.tsbuildinfo
+test-results/
+playwright-report/
+
 # Logs
 logs
 *.log
