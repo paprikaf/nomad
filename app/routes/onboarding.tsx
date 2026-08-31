@@ -7,12 +7,11 @@ import {
   IconCheck,
   IconEPassport,
   IconId,
-  IconMailFast,
   IconMapPin,
   IconNotebook,
   IconPlaneDeparture,
   IconReceipt2,
-  IconSparkles,
+  IconCircleDashed,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -20,7 +19,6 @@ import { toast } from "sonner";
 
 import { CountryPicker } from "@/components/nomad/CountryPicker";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 import {
@@ -34,7 +32,7 @@ export function meta() {
   return [{ title: "Nomad — Welcome" }];
 }
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 const GOALS = ["schengen", "tax", "pr", "log"] as const;
 
 /**
@@ -58,10 +56,10 @@ export default function OnboardingRoute() {
   const [step, setStep] = useState(1);
   const [goals, setGoals] = useState<string[]>([]);
   const [fiscal, setFiscal] = useState<string | null>(null);
+  const [citizenship, setCitizenship] = useState<string | null>(null);
   const [status, setStatus] = useState<ImmigrationStatus | "none" | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [locationCode, setLocationCode] = useState<string | null>(null);
-  const [mail, setMail] = useState(true);
   const [finishing, setFinishing] = useState(false);
 
   // Re-running onboarding edits the existing profile instead of resetting it.
@@ -72,9 +70,9 @@ export default function OnboardingRoute() {
     const p = snap.profile;
     if (p.goals.length > 0) setGoals(p.goals);
     if (p.fiscalHomeCountry) setFiscal(p.fiscalHomeCountry);
+    if (p.citizenshipCountry) setCitizenship(p.citizenshipCountry);
     if (p.immigrationStatus) setStatus(p.immigrationStatus);
     if (p.trackedCountries.length > 0) setPicked(p.trackedCountries);
-    setMail(p.onboardingCompleted ? p.mailScanEnabled : true);
   }, [snap]);
 
   const location = locationCode ?? existingLocation?.countryCode ?? null;
@@ -95,10 +93,9 @@ export default function OnboardingRoute() {
   const stepHasInput =
     (step === 1 && goals.length > 0) ||
     (step === 2 && fiscal !== null) ||
-    (step === 3 && status !== null) ||
+    (step === 3 && (status !== null || citizenship !== null)) ||
     (step === 4 && picked.length > 0) ||
-    (step === 5 && location !== null) ||
-    step === 6;
+    step === 5;
 
   function toggleGoal(goal: string) {
     setGoals((prev) =>
@@ -117,6 +114,7 @@ export default function OnboardingRoute() {
     try {
       await updateProfile.mutateAsync({
         fiscalHomeCountry: fiscal,
+        citizenshipCountry: citizenship,
         immigrationStatus: status === "none" ? null : status,
         goals,
         trackedCountries: [
@@ -126,7 +124,9 @@ export default function OnboardingRoute() {
             ...(location ? [location] : []),
           ]),
         ],
-        mailScanEnabled: mail,
+        // The standalone template does not ship a connected Mail provider.
+        // Keep this off until the user deliberately configures one.
+        mailScanEnabled: false,
         onboardingCompleted: true,
       });
       const needsStay =
@@ -199,16 +199,16 @@ export default function OnboardingRoute() {
     },
     {
       id: "none",
-      icon: IconSparkles,
+      icon: IconCircleDashed,
       name: t("nomad.wizard.statusNone"),
       note: t("nomad.wizard.statusNoneNote"),
     },
   ];
 
   const paceLabel =
-    step === 5
+    step === 4
       ? t("nomad.wizard.paceAlmost")
-      : step === 6
+      : step === 5
         ? t("nomad.wizard.paceLast")
         : t("nomad.wizard.stepOf", { step, total: TOTAL_STEPS });
 
@@ -346,6 +346,20 @@ export default function OnboardingRoute() {
                   );
                 })}
               </div>
+              <div className="mt-6 border-t border-border pt-6">
+                <div className="mb-1 text-sm font-semibold">
+                  {t("nomad.wizard.citizenshipTitle")}
+                </div>
+                <div className="mb-4 text-xs text-muted-foreground">
+                  {t("nomad.wizard.citizenshipSubtitle")}
+                </div>
+                <CountryPicker
+                  selected={citizenship ? [citizenship] : []}
+                  onToggle={(code) =>
+                    setCitizenship((prev) => (prev === code ? null : code))
+                  }
+                />
+              </div>
             </StepShell>
           )}
 
@@ -417,32 +431,6 @@ export default function OnboardingRoute() {
                   })}
                 />
               )}
-            </StepShell>
-          )}
-
-          {/* Step 6: optional inbox scan + summary */}
-          {step === 6 && (
-            <StepShell
-              title={t("nomad.wizard.mailTitle")}
-              subtitle={t("nomad.wizard.mailSubtitle")}
-            >
-              <OptionCard selected={mail} onClick={() => setMail(!mail)}>
-                <IconMailFast className="size-8 shrink-0 text-muted-foreground" />
-                <div>
-                  <div className="font-semibold">
-                    {t("nomad.wizard.mailOption")}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {t("nomad.wizard.mailOptionNote")}
-                  </div>
-                </div>
-                <span className="ml-auto">
-                  <Switch checked={mail} onCheckedChange={setMail} />
-                </span>
-              </OptionCard>
-              <div className="mt-3 text-xs text-muted-foreground">
-                {t("nomad.wizard.mailOptional")}
-              </div>
               <div className="nomad-panel mt-6 p-4">
                 <div className="mb-1 text-sm font-semibold">
                   {t("nomad.wizard.summaryTitle")}
@@ -452,10 +440,10 @@ export default function OnboardingRoute() {
                     home: fiscal
                       ? `${countryFlag(fiscal)} ${countryName(fiscal, locale)}`
                       : t("nomad.wizard.summaryNoHome"),
+                    passport: citizenship
+                      ? `${countryFlag(citizenship)} ${countryName(citizenship, locale)}`
+                      : t("nomad.wizard.summaryNoPassport"),
                     count: picked.length,
-                    scan: mail
-                      ? t("nomad.wizard.summaryScanOn")
-                      : t("nomad.wizard.summaryScanOff"),
                   })}
                 </div>
               </div>

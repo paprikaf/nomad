@@ -10,7 +10,10 @@ export default defineAction({
   description:
     "Delete a visa/permit by id. Exit projections stop being capped by its expiry and its alerts disappear.",
   schema: z.object({
-    id: z.string().describe("Visa id to delete"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid visa id")
+      .describe("Visa id to delete"),
   }),
   run: async (args) => {
     const owner = requireOwner();

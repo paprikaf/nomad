@@ -7,80 +7,79 @@
 
 @source "./**/*.{ts,tsx}";
 
-/*
- * Nomad "presence cockpit" palette. Neutral black/zinc base to match the
- * other templates (cf. chat's #18181B); --info keeps a small blue accent as
- * a conventional status color alongside the --safe/--warn/--danger
- * traffic-light tokens that drive every compliance visual.
- */
+/* Nomad "Atlas Control Room": fog/graphite chrome with a deep-petrol brand. */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
-  --primary: 0 0% 15%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 95%;
-  --secondary-foreground: 0 0% 15%;
-  --muted: 0 0% 95%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 0 0% 95%;
-  --accent-foreground: 0 0% 15%;
-  --destructive: 0 84% 60%;
+  --background: 210 25% 98%;
+  --foreground: 215 24% 13%;
+  --card: 210 20% 100%;
+  --card-foreground: 215 24% 13%;
+  --popover: 210 20% 100%;
+  --popover-foreground: 215 24% 13%;
+  --primary: 195 69% 27%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 18% 94%;
+  --secondary-foreground: 215 22% 18%;
+  --muted: 210 18% 95%;
+  --muted-foreground: 215 10% 43%;
+  --accent: 201 24% 92%;
+  --accent-foreground: 204 55% 22%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 0 0% 40%;
-  --radius: 0.75rem;
-  --safe: 158 74% 33%;
-  --warn: 36 92% 40%;
-  --danger: 350 89% 50%;
-  --info: 200 98% 39%;
-  --sidebar-background: 0 0% 97%;
-  --sidebar-foreground: 0 0% 45%;
-  --sidebar-primary: 0 0% 15%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 95%;
-  --sidebar-accent-foreground: 0 0% 15%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 0 0% 40%;
+  --border: 210 14% 87%;
+  --input: 210 14% 87%;
+  --ring: 195 69% 34%;
+  --radius: 0.5rem;
+  --brand: 195 69% 27%;
+  --brand-foreground: 210 40% 98%;
+  --safe: 154 60% 34%;
+  --warn: 38 92% 44%;
+  --danger: 0 72% 51%;
+  --info: 215 82% 52%;
+  --sidebar-background: 210 20% 96%;
+  --sidebar-foreground: 214 12% 38%;
+  --sidebar-primary: 195 69% 27%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 201 23% 90%;
+  --sidebar-accent-foreground: 204 50% 20%;
+  --sidebar-border: 210 15% 86%;
+  --sidebar-ring: 195 69% 34%;
 }
 
 .dark {
-  --background: 0 0% 13%;
-  --foreground: 0 0% 90%;
-  --card: 0 0% 15%;
-  --card-foreground: 0 0% 90%;
-  --popover: 0 0% 15%;
-  --popover-foreground: 0 0% 90%;
-  --primary: 0 0% 75%;
-  --primary-foreground: 0 0% 10%;
-  --secondary: 0 0% 18%;
-  --secondary-foreground: 0 0% 90%;
-  --muted: 0 0% 16%;
-  --muted-foreground: 0 0% 60%;
-  --accent: 0 0% 18%;
-  --accent-foreground: 0 0% 90%;
-  --destructive: 0 63% 51%;
+  --background: 215 20% 9%;
+  --foreground: 210 16% 91%;
+  --card: 215 18% 11%;
+  --card-foreground: 210 16% 91%;
+  --popover: 215 18% 12%;
+  --popover-foreground: 210 16% 91%;
+  --primary: 195 63% 49%;
+  --primary-foreground: 213 30% 9%;
+  --secondary: 213 15% 16%;
+  --secondary-foreground: 210 16% 91%;
+  --muted: 215 15% 15%;
+  --muted-foreground: 212 11% 62%;
+  --accent: 205 20% 18%;
+  --accent-foreground: 195 45% 85%;
+  --destructive: 0 65% 55%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 24%;
-  --input: 0 0% 24%;
-  --ring: 0 0% 60%;
-  --radius: 0.75rem;
-  --safe: 158 64% 52%;
+  --border: 214 14% 22%;
+  --input: 214 14% 22%;
+  --ring: 195 70% 55%;
+  --radius: 0.5rem;
+  --brand: 195 63% 49%;
+  --brand-foreground: 213 30% 9%;
+  --safe: 154 58% 49%;
   --warn: 43 96% 56%;
-  --danger: 350 89% 60%;
-  --info: 198 93% 60%;
-  --sidebar-background: 0 0% 10%;
-  --sidebar-foreground: 0 0% 60%;
-  --sidebar-primary: 0 0% 75%;
-  --sidebar-primary-foreground: 0 0% 10%;
-  --sidebar-accent: 0 0% 16%;
-  --sidebar-accent-foreground: 0 0% 90%;
-  --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 0 0% 60%;
+  --danger: 0 74% 61%;
+  --info: 214 90% 64%;
+  --sidebar-background: 216 22% 8%;
+  --sidebar-foreground: 213 10% 65%;
+  --sidebar-primary: 195 63% 49%;
+  --sidebar-primary-foreground: 213 30% 9%;
+  --sidebar-accent: 207 19% 15%;
+  --sidebar-accent-foreground: 196 43% 87%;
+  --sidebar-border: 215 14% 18%;
+  --sidebar-ring: 195 70% 55%;
 }
 
 @layer base {
@@ -99,7 +98,7 @@
   border-radius: var(--radius);
 }
 .dark .nomad-panel {
-  background: linear-gradient(180deg, hsl(var(--card)), hsl(0 0% 11%));
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(215 20% 9%));
 }
 
 .nomad-glow {
@@ -143,7 +142,7 @@
   background: hsl(var(--muted-foreground) / 0.15);
 }
 .dark .nomad-track {
-  background: hsl(222 50% 9%);
+  background: hsl(215 28% 10%);
 }
 
 @keyframes nomad-pulse {
@@ -157,6 +156,13 @@
 }
 .nomad-pulse {
   animation: nomad-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nomad-pulse {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 ::-webkit-scrollbar {

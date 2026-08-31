@@ -93,14 +93,19 @@ export function WorldMap({
   const t = useT();
   const { locale } = useLocale();
   const [hoverCode, setHoverCode] = useState<string | null>(null);
-  const [pointer, setPointer] = useState<{ x: number; y: number }>({
+  const [pointer, setPointer] = useState<{
+    x: number;
+    y: number;
+    width: number;
+  }>({
     x: 0,
     y: 0,
+    width: 1,
   });
   const [selected, setSelected] = useState<{
     code: string;
-    x: number;
-    y: number;
+    xPct: number;
+    yPct: number;
   } | null>(null);
 
   const shapes = useMemo(() => countryShapes(), []);
@@ -116,7 +121,11 @@ export function WorldMap({
       className="nomad-panel nomad-glow nomad-map-bg nomad-grid-lines relative min-h-[320px] flex-1 overflow-hidden"
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        setPointer({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        setPointer({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          width: rect.width,
+        });
       }}
     >
       <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2 text-xs">
@@ -141,7 +150,7 @@ export function WorldMap({
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         className="absolute inset-0 h-full w-full"
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="group"
         aria-label={t("nomad.cockpit.mapLabel")}
       >
         {shapes.map((shape) => {
@@ -168,19 +177,47 @@ export function WorldMap({
               }
               strokeOpacity={status ? 0.7 : 1}
               strokeWidth={hovered ? 1.2 : 0.6}
+              role={status ? "button" : undefined}
+              tabIndex={status ? 0 : undefined}
+              aria-label={
+                status
+                  ? `${countryName(shape.code, locale)}, ${status.usedDays} of ${status.limitDays} days used`
+                  : undefined
+              }
               onClick={() => {
                 if (quickActions) {
                   setSelected((prev) =>
                     prev?.code === shape.code
                       ? null
-                      : { code: shape.code, x: pointer.x, y: pointer.y },
+                      : {
+                          code: shape.code,
+                          xPct: (shape.centroid[0] / VIEW_WIDTH) * 100,
+                          yPct: (shape.centroid[1] / VIEW_HEIGHT) * 100,
+                        },
                   );
+                } else {
+                  onSelect(shape.code);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                if (quickActions) {
+                  setSelected({
+                    code: shape.code,
+                    xPct: (shape.centroid[0] / VIEW_WIDTH) * 100,
+                    yPct: (shape.centroid[1] / VIEW_HEIGHT) * 100,
+                  });
                 } else {
                   onSelect(shape.code);
                 }
               }}
               onMouseEnter={() => setHoverCode(shape.code)}
               onMouseLeave={() =>
+                setHoverCode((prev) => (prev === shape.code ? null : prev))
+              }
+              onFocus={() => setHoverCode(shape.code)}
+              onBlur={() =>
                 setHoverCode((prev) => (prev === shape.code ? null : prev))
               }
             />
@@ -223,7 +260,8 @@ export function WorldMap({
           style={{
             left: Math.min(pointer.x + 14, 9999),
             top: pointer.y + 8,
-            transform: pointer.x > 500 ? "translateX(-110%)" : undefined,
+            transform:
+              pointer.x > pointer.width / 2 ? "translateX(-110%)" : undefined,
           }}
         >
           <div className="font-semibold">{countryName(hoverCode, locale)}</div>
@@ -267,9 +305,10 @@ export function WorldMap({
           <div
             className="nomad-panel nomad-glow absolute z-30 w-[240px] p-3"
             style={{
-              left: Math.max(8, Math.min(selected.x + 12, 9999)),
-              top: Math.max(8, selected.y - 8),
-              transform: selected.x > 560 ? "translateX(-110%)" : undefined,
+              left: `${Math.max(8, Math.min(selected.xPct, 92))}%`,
+              top: `${Math.max(12, Math.min(selected.yPct, 82))}%`,
+              transform:
+                selected.xPct > 56 ? "translateX(-105%)" : "translateX(8px)",
             }}
           >
             {quickActions(selected.code, () => setSelected(null))}

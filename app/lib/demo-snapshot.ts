@@ -106,17 +106,6 @@ function demoStays(today: string): Stay[] {
       entryDate: d(-25),
       exitDate: null,
     }),
-    // Auto-detected inbox booking awaiting confirmation.
-    stay({
-      id: "demo-ge-pending",
-      countryCode: "GE",
-      city: "Tbilisi",
-      entryDate: d(17),
-      exitDate: null,
-      source: "inbox",
-      status: "pending",
-      notes: "Flight LIS→TBS found in inbox scan",
-    }),
   ];
 }
 
@@ -200,9 +189,9 @@ function demoProfile(today: string): NomadProfile {
     immigrationStatus: "pr",
     goals: ["schengen", "tax", "pr", "log"],
     trackedCountries: ["PT", "TH", "CA", "AE"],
-    mailScanEnabled: true,
+    mailScanEnabled: false,
     scanFrequency: "weekly",
-    lastScanAt: addDays(today, -2),
+    lastScanAt: null,
     onboardingCompleted: true,
   };
 }

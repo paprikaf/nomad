@@ -15,25 +15,34 @@ export default defineAction({
   schema: z.object({
     fiscalHomeCountry: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .nullable()
       .optional()
       .describe("ISO country code of fiscal residency, e.g. CA"),
     citizenshipCountry: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .nullable()
       .optional()
       .describe("ISO country code of the user's passport, e.g. TN"),
     immigrationStatus: z.enum(["pr", "citizen", "visa"]).nullable().optional(),
     goals: z
-      .array(z.string())
+      .array(z.string().min(1).max(32))
+      .max(16)
       .optional()
       .describe(
         "Why the user is here (schengen, tax, pr, log) — personalizes guidance",
       ),
     trackedCountries: z
-      .array(z.string().length(2))
+      .array(
+        z
+          .string()
+          .regex(
+            /^[A-Za-z]{2}$/,
+            "Expected an ISO 3166-1 alpha-2 country code",
+          ),
+      )
+      .max(250)
       .optional()
       .describe("ISO country codes to track on the map"),
     mailScanEnabled: z.coerce.boolean().optional(),

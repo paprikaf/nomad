@@ -95,24 +95,33 @@ export function stayLengthDays(
   return Math.max(0, Math.round((end - toUTC(stay.entryDate)) / ms) + 1);
 }
 
+/**
+ * Quote a CSV cell and neutralize spreadsheet formula prefixes. Travel notes
+ * and city names are user-authored, so ordinary CSV quoting is not enough.
+ */
+export function escapeCsvCell(value: string | null): string {
+  if (value === null || value === "") return "";
+  const raw = String(value);
+  const safe = /^[\t\r ]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+  return `"${safe.split('"').join('""')}"`;
+}
+
 /** Build and download the presence log as a CSV file. */
 export function downloadPresenceCsv(stays: Stay[], filename: string): void {
   const header =
     "country_code,country,city,entry_date,exit_date,days,source,status,notes";
   const today = new Date().toISOString().slice(0, 10);
-  const escape = (v: string | null) =>
-    v === null || v === "" ? "" : `"${String(v).split('"').join('""')}"`;
   const lines = stays.map((s) =>
     [
-      s.countryCode,
-      escape(countryName(s.countryCode)),
-      escape(s.city),
-      s.entryDate,
-      s.exitDate ?? "",
+      escapeCsvCell(s.countryCode),
+      escapeCsvCell(countryName(s.countryCode)),
+      escapeCsvCell(s.city),
+      escapeCsvCell(s.entryDate),
+      escapeCsvCell(s.exitDate),
       stayLengthDays(s, today),
-      s.source,
-      s.status,
-      escape(s.notes),
+      escapeCsvCell(s.source),
+      escapeCsvCell(s.status),
+      escapeCsvCell(s.notes),
     ].join(","),
   );
   const blob = new Blob([[header, ...lines].join("\n")], {

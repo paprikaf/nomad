@@ -10,7 +10,10 @@ export default defineAction({
   description:
     "Stop tracking a compliance rule by deleting it. The presence ledger is untouched — only the rule and its alerts disappear.",
   schema: z.object({
-    id: z.string().describe("Rule id to delete"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid rule id")
+      .describe("Rule id to delete"),
   }),
   run: async (args) => {
     const owner = requireOwner();

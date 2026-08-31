@@ -10,19 +10,29 @@ import { dayNumber, isValidISODate } from "../shared/compliance.js";
 
 const isoDate = z
   .string()
+  .length(10)
   .refine(isValidISODate, "Expected a valid YYYY-MM-DD calendar date");
 
 export default defineAction({
   description:
     "Create or update a stay in the presence ledger. Pass `id` to patch an existing stay (only provided fields change — e.g. set status='confirmed' to confirm a pending inbox-detected trip, or set exitDate to close an open stay). Omit `id` to log a new stay; countryCode and entryDate are then required. Dates are inclusive YYYY-MM-DD; use exitDate=null (or omit) for an ongoing stay.",
   schema: z.object({
-    id: z.string().optional().describe("Existing stay id to update"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid stay id")
+      .optional()
+      .describe("Existing stay id to update"),
     countryCode: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .optional()
       .describe("ISO 3166-1 alpha-2 country code, e.g. PT"),
-    city: z.string().nullable().optional().describe("City name (optional)"),
+    city: z
+      .string()
+      .max(120)
+      .nullable()
+      .optional()
+      .describe("City name (optional)"),
     entryDate: isoDate
       .optional()
       .describe("First day on the ground, YYYY-MM-DD"),
@@ -37,7 +47,7 @@ export default defineAction({
       .describe(
         "`pending` stays are excluded from compliance math until confirmed",
       ),
-    notes: z.string().nullable().optional(),
+    notes: z.string().max(4_000).nullable().optional(),
   }),
   run: async (args) => {
     const owner = requireOwner();

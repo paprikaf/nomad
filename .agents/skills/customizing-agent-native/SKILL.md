@@ -1,7 +1,7 @@
 ---
 name: customizing-agent-native
 description: >-
-  How to configure, compose, or eject Agent Native features into app-owned
+  How to configure, compose, or eject Agent-Native features into app-owned
   code. Use when overriding shared components or integrations, customizing a
   template, adding UI to chat or headless apps, or inspecting package source.
 scope: dev
@@ -9,7 +9,7 @@ metadata:
   internal: true
 ---
 
-# Customizing Agent Native
+# Customizing Agent-Native
 
 ## Rule
 
@@ -151,9 +151,9 @@ rg -n "<component or symbol>" node_modules/@agent-native/core/corpus
 
 - Toolkit publishes readable TypeScript under
   `node_modules/@agent-native/toolkit/src/` for selective UI adoption.
-- Core and first-party template source lives under
-  `node_modules/@agent-native/core/corpus/core/` and
-  `node_modules/@agent-native/core/corpus/templates/`.
+- First-party template source lives under
+  `node_modules/@agent-native/core/corpus/templates/`; Core's own implementation
+  lives under `node_modules/@agent-native/core/dist/`.
 - Treat those trees as read-only references. Prefer `agent-native eject` so the
   package manifest selects the complete source closure and rewrites imports.
   Manual inspection is still useful for deciding whether to configure,
@@ -205,7 +205,7 @@ UI ownership may change; product contracts should not:
 ## Don't
 
 - Don't edit or import from `node_modules/@agent-native/*/src` at runtime.
-- Don't add `pnpm.overrides`, patches, or resolutions for Agent Native packages.
+- Don't add `pnpm.overrides`, patches, or resolutions for Agent-Native packages.
 - Don't copy Core auth, DB, action, agent-loop, or transport internals.
 - Don't manually copy a first-party unit with a missing recipe; fix its manifest.
 - Don't eject a full package when a prop, slot, wrapper, or smaller unit works.

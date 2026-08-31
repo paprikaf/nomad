@@ -170,7 +170,12 @@ When adding app data, define tables with `@agent-native/core/db/schema` helpers 
 | --------------------- | ------------------------------- | -------------------------------------------------------------------------- |
 | `DATABASE_URL`        | Production yes, local dev no    | Persistent SQL connection string (local dev default: `file:./data/app.db`) |
 | `DATABASE_AUTH_TOKEN` | Only when the provider needs it | Auth token for providers such as Turso/libSQL                              |
-| `AUTH_DISABLED`       | Optional                        | Set to `true` or `1` to skip login/signup (local dev/preview only)         |
+| `BETTER_AUTH_SECRET`  | Production yes                  | Unique random secret for authentication/session signing                    |
+| `APP_URL`             | Production yes                  | Canonical HTTPS origin used by auth and hosted async processing             |
+| `AUTH_DISABLED`       | Local development only          | Skips auth and maps every request to one shared development user            |
+
+`AUTH_DISABLED` is never a demo security boundary and must not be enabled on a
+public or shared deployment.
 
 ## Extensions (Framework Feature)
 

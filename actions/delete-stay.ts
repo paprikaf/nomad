@@ -10,7 +10,10 @@ export default defineAction({
   description:
     "Delete a stay from the presence ledger by id (e.g. dismiss a wrongly detected inbox booking). This permanently removes the row and recomputes all rule counters.",
   schema: z.object({
-    id: z.string().describe("Stay id to delete"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid stay id")
+      .describe("Stay id to delete"),
   }),
   run: async (args) => {
     const owner = requireOwner();

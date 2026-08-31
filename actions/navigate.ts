@@ -17,18 +17,49 @@ import { defineAction } from "@agent-native/core/action";
 import { writeAppState } from "@agent-native/core/application-state";
 import { z } from "zod";
 
+function isSameOriginPath(path: string): boolean {
+  if (
+    !path.startsWith("/") ||
+    path.startsWith("//") ||
+    path.includes("\\") ||
+    /[\u0000-\u001f\u007f]/.test(path)
+  ) {
+    return false;
+  }
+  try {
+    return (
+      new URL(path, "https://nomad.invalid").origin === "https://nomad.invalid"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default defineAction({
   description:
     "Navigate the UI to a specific view or path. Views: cockpit (presence map home), chat, onboarding, settings, database, observability, extensions, or country:<ISO2> (e.g. country:PT) for a country detail page. Writes a navigate command to application state which the UI reads and auto-deletes.",
   schema: z.object({
     view: z
       .string()
+      .min(1)
+      .max(64)
       .optional()
       .describe(
         "View name to navigate to (cockpit, chat, onboarding, settings, country:<ISO2>)",
       ),
-    path: z.string().optional().describe("URL path to navigate to"),
-    threadId: z.string().optional().describe("Chat thread ID to open"),
+    path: z
+      .string()
+      .min(1)
+      .max(2_048)
+      .refine(isSameOriginPath, "Expected a same-origin absolute path")
+      .optional()
+      .describe("URL path to navigate to"),
+    threadId: z
+      .string()
+      .min(1)
+      .max(256)
+      .optional()
+      .describe("Chat thread ID to open"),
   }),
   http: false,
   run: async (args) => {

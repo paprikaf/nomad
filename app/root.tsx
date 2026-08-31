@@ -30,6 +30,10 @@ import { i18nCatalog } from "./i18n";
 import stylesheet from "./global.css?url";
 
 configureTracking({
+  // Travel history, citizenship, and residency details are sensitive. Keep
+  // aggregate events, but never capture page content or session replays.
+  contentCapture: false,
+  sessionReplay: false,
   getDefaultProps: (_name, properties) => ({
     ...properties,
     app: "nomad",
@@ -49,10 +53,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
@@ -63,7 +64,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           dangerouslySetInnerHTML={{ __html: LOCALE_INIT_SCRIPT }}
         />
         <link rel="manifest" href={appPath("/manifest.json")} />
-        <meta name="theme-color" content="#18181B" />
+        <meta name="theme-color" content="#155E75" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta
           name="apple-mobile-web-app-status-bar-style"

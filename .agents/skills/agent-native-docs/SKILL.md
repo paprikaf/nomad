@@ -1,7 +1,7 @@
 ---
 name: agent-native-docs
 description: >-
-  How to find version-matched Agent Native framework docs and source bundled in
+  How to find version-matched Agent-Native framework docs and source bundled in
   node_modules. Use before implementing or answering questions about
   @agent-native/core APIs, generated apps, workspaces, templates, or advanced
   features.
@@ -10,11 +10,11 @@ metadata:
   internal: true
 ---
 
-# Agent Native Docs Lookup
+# Agent-Native Docs Lookup
 
 ## Rule
 
-Before implementing or explaining non-trivial Agent Native behavior, read the
+Before implementing or explaining non-trivial Agent-Native behavior, read the
 version-matched docs installed with `@agent-native/core`. When examples,
 imports, or implementation details matter, inspect the packaged source corpus
 too.
@@ -23,13 +23,33 @@ too.
 
 Generated apps and workspaces may be on a different framework version than the
 public docs or model memory. The installed package is the source that matches
-the app in front of you. It also includes a source-only corpus of core and
-first-party templates so agents can replicate current best-practice patterns
-without needing the framework monorepo checkout.
+the app in front of you. It also includes a source-only corpus of first-party
+templates so agents can replicate current best-practice patterns without needing
+the framework monorepo checkout.
 
 ## How
 
 From a generated app directory:
+
+```bash
+pnpm action framework-search --pattern "defineAction"
+pnpm action framework-search --pattern "templates/*/actions/*.ts" --mode glob --scope source
+pnpm action framework-search --pattern "Agent(?:Panel|Sidebar)" --mode regex --scope source
+```
+
+Use `framework-search` first when a question may cross the docs and source
+boundary. It searches the version-matched framework docs, runtime-visible
+skills, readable Core or Toolkit package source, and first-party template
+corpus in one bounded read-only call. Use `scope: docs` or `scope: source` to
+narrow it, then use the existing focused readers for the page or file you need.
+
+The same tool is available in the headless `pnpm agent` loop and every built-in
+app agent. Its default substring mode is safest for ordinary questions; use
+`glob` for wildcard paths, `sql-like` for `%` and `_` wildcards, and `regex`
+for precise structural matches. Results are bounded, so refine the pattern or
+path instead of treating a truncated result as exhaustive.
+
+From a generated app directory, the lower-level readers remain available:
 
 ```bash
 pnpm action docs-search --query "<feature>"
@@ -37,13 +57,13 @@ pnpm action docs-search --slug <slug>
 pnpm action docs-search --list
 pnpm action source-search --query "<pattern>"
 pnpm action source-search --path templates/plan/AGENTS.md
-pnpm action source-search --path toolkit/src/index.ts
+pnpm action source-search --path templates/chat/actions/hello.ts
 pnpm action source-search --list
 ```
 
-The headless `pnpm agent` loop and built-in app agent also expose a read-only
-`docs-search` tool with the same `query`, `slug`, and `list` options, plus a
-read-only `source-search` tool with `query`, `path`, and `list`.
+The headless `pnpm agent` loop and built-in app agent also expose read-only
+`framework-search`, `docs-search`, and `source-search` tools. Use the unified
+tool for discovery, then the focused tools for full page or file reads.
 
 If the action runner is unavailable, search the package directly:
 
@@ -53,12 +73,13 @@ rg -n "defineAction|useActionQuery" node_modules/@agent-native/core/corpus
 ```
 
 Then read `node_modules/@agent-native/core/docs/AGENTS.md` or the matching file
-under `node_modules/@agent-native/core/docs/content/`. For source examples,
-read files under `node_modules/@agent-native/core/corpus/core/` or
-`node_modules/@agent-native/core/corpus/templates/`.
+under `node_modules/@agent-native/core/docs/content/`. For template examples,
+read files under `node_modules/@agent-native/core/corpus/templates/`. The corpus
+carries templates only; for Core's own implementation read
+`node_modules/@agent-native/core/dist/` (compiled sources plus `.d.ts`).
 
-Toolkit source is searchable at `toolkit/` in the Core corpus and also ships as
-readable TypeScript under `node_modules/@agent-native/toolkit/src/`. Read
+Toolkit ships readable TypeScript under
+`node_modules/@agent-native/toolkit/src/`. Read
 `customizing-agent-native` before taking ownership of a shared component: inspect package
 source as a read-only reference, then configure, compose, or eject the smallest
 supported unit into app-owned source. Preserve public actions, application
@@ -83,8 +104,8 @@ rg -n "drag.*drop|reorder" node_modules/@agent-native/core/corpus/templates
 cp node_modules/@agent-native/core/corpus/templates/mail/actions/archive-email.ts \
    actions/archive-item.ts
 
-# Read the full framework source behind an API, not just the corpus copy
-rg -n "defineAction" node_modules/@agent-native/core/src/action.ts
+# Read the framework's own implementation behind an API
+rg -n "defineAction" node_modules/@agent-native/core/dist/action.js
 ```
 
 Copying template-level app code (actions, components, skill files) is the
@@ -113,3 +134,14 @@ hand-duplicating framework logic.
   `agent-surfaces`.
 - Do not copy framework runtime internals when a public API or narrow UI copy
   will do; read `customizing-agent-native` for the supported override ladder.
+
+## Authoring visual docs blocks
+
+Treat the shared `Diagram` block as a renderer, not as a reason to style every
+docs UI as a sketch. Use the hand-drawn font and Rough.js only for actual
+diagrams or wireframes that communicate structure, flow, or a design draft.
+For polished UI-like content - cards, logo walls, tables, controls, or product
+shells — set `renderMode="design"` (and usually `frame="hide"` when the block
+is the content itself). Design mode preserves normal docs typography and
+disables the Rough.js overlay. Keep `data-rough` only on elements intentionally
+sketched inside a real diagram.
