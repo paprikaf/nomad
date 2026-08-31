@@ -11,9 +11,15 @@ export default defineAction({
   description:
     "Create or update a compliance rule. Pass `id` to patch an existing rule (only provided fields change). Omit `id` to create; name, kind and limitDays are then required. Kinds: `rolling-window` (limit within a trailing windowDays, e.g. Schengen 90/180), `calendar-year` (limit per calendar year, e.g. 183-day tax residency), `presence-minimum` (must accumulate limitDays within windowDays, e.g. Canadian PR 730/1825; windowDays null = per calendar year, e.g. ≥183 home days/yr as a fiscal-residency heuristic). Scope with countryCode (one country) OR zone='schengen' (all Schengen states).",
   schema: z.object({
-    id: z.string().optional().describe("Existing rule id to update"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid rule id")
+      .optional()
+      .describe("Existing rule id to update"),
     name: z
       .string()
+      .min(1)
+      .max(160)
       .optional()
       .describe("Display name, e.g. 'Schengen 90/180'"),
     kind: z
@@ -21,7 +27,7 @@ export default defineAction({
       .optional(),
     countryCode: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .nullable()
       .optional()
       .describe("ISO country code the rule applies to (null for zone rules)"),
@@ -30,17 +36,18 @@ export default defineAction({
       .nullable()
       .optional()
       .describe("Multi-country zone; days in any member state count together"),
-    limitDays: z.coerce.number().int().positive().optional(),
+    limitDays: z.coerce.number().int().min(1).max(36_600).optional(),
     windowDays: z.coerce
       .number()
       .int()
-      .positive()
+      .min(1)
+      .max(36_600)
       .nullable()
       .optional()
       .describe(
         "Trailing window length in days (rolling rules); null for calendar-year",
       ),
-    description: z.string().nullable().optional(),
+    description: z.string().max(4_000).nullable().optional(),
   }),
   run: async (args) => {
     const owner = requireOwner();

@@ -1,5 +1,6 @@
 import {
   navigateWithAgentChatViewTransition,
+  useCodeMode,
   useChatThreads,
   type ChatThreadSummary,
 } from "@agent-native/core/client/agent-chat";
@@ -19,8 +20,8 @@ import {
   IconMessageCircle,
   IconPin,
   IconPlus,
-  IconWorld,
   IconSettings,
+  IconWorld,
 } from "@tabler/icons-react";
 import {
   useEffect,
@@ -48,7 +49,7 @@ import {
 import { APP_TITLE } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const productNavItems = [
   {
     icon: IconWorld,
     labelKey: "navigation.cockpit",
@@ -62,6 +63,15 @@ const navItems = [
     view: "chat",
   },
   {
+    icon: IconSettings,
+    labelKey: "navigation.settings",
+    href: "/settings",
+    view: "settings",
+  },
+];
+
+const codeNavItems = [
+  {
     icon: IconActivity,
     labelKey: "navigation.observability",
     href: "/observability",
@@ -72,12 +82,6 @@ const navItems = [
     labelKey: "navigation.database",
     href: "/database",
     view: "database",
-  },
-  {
-    icon: IconSettings,
-    labelKey: "navigation.settings",
-    href: "/settings",
-    view: "settings",
   },
 ];
 
@@ -406,6 +410,10 @@ export function Sidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const t = useT();
+  const { isCodeMode } = useCodeMode();
+  const navItems = isCodeMode
+    ? [...productNavItems, ...codeNavItems]
+    : productNavItems;
   const isChatRoute =
     location.pathname === "/chat" || location.pathname.startsWith("/chat/");
   const ToggleIcon = collapsed
@@ -470,7 +478,7 @@ export function Sidebar({
           to="/"
           className={cn(
             "flex min-w-0 items-center rounded outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            collapsed ? "size-7 justify-center" : "flex-1 gap-3",
+            collapsed ? "size-8 justify-center" : "flex-1 gap-2.5",
           )}
           aria-label={collapsed ? APP_TITLE : undefined}
         >
@@ -487,7 +495,7 @@ export function Sidebar({
             className="hidden h-4 w-auto shrink-0 dark:block"
           />
           <div className={cn("min-w-0", collapsed && "sr-only")}>
-            <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
+            <p className="truncate text-sm font-semibold tracking-[-0.01em] text-sidebar-accent-foreground">
               {APP_TITLE}
             </p>
           </div>
@@ -559,7 +567,7 @@ export function Sidebar({
       </nav>
 
       <div className={cn("mt-auto shrink-0", collapsed && "py-2")}>
-        {!collapsed ? (
+        {!collapsed && isCodeMode ? (
           <div className="px-2 py-1">
             <ExtensionsSidebarSection />
           </div>

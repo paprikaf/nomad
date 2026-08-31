@@ -12,7 +12,7 @@ export default defineAction({
   schema: z.object({
     countryCode: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .optional()
       .describe("Filter to one ISO 3166-1 alpha-2 country code, e.g. PT"),
   }),

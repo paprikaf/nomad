@@ -1,17 +1,14 @@
 import { createAuthPlugin } from "@agent-native/core/server";
 
-const rawAppTitle = "Nomad";
-const appTitle = rawAppTitle === "{" + "{APP_TITLE}}" ? "Chat" : rawAppTitle;
-
 export default createAuthPlugin({
   marketing: {
-    appName: appTitle,
+    appName: "Nomad",
     tagline:
-      "Start from a chat-first agent-native app and add actions, screens, and workflows as you grow.",
+      "A private control room for travel history, visa windows, and residency day counts.",
     features: [
-      "Full-page chat with durable threads and tool call history",
-      "Add actions once and use them from chat, UI, HTTP, MCP, A2A, and CLI",
-      "Plug in your own agent runtime or build on the included app-agent loop",
+      "Keep a durable presence ledger across every country you visit",
+      "Monitor Schengen, tax-residency, visa, and permanent-residency thresholds",
+      "Plan with deterministic day counts and an agent that can act on your records",
     ],
   },
 });

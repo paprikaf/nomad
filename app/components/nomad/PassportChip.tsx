@@ -19,8 +19,10 @@ import { CountryPicker } from "./CountryPicker";
  */
 export function PassportChip({
   citizenshipCountry,
+  disabled = false,
 }: {
   citizenshipCountry: string | null;
+  disabled?: boolean;
 }) {
   const t = useT();
   const { locale } = useLocale();
@@ -31,8 +33,10 @@ export function PassportChip({
     <>
       <button
         type="button"
+        disabled={disabled}
+        title={disabled ? t("nomad.demo.disabledHint") : undefined}
         onClick={() => setOpen(true)}
-        className="nomad-chip hidden cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs transition-colors hover:border-ring lg:flex"
+        className="nomad-chip hidden cursor-pointer items-center gap-1.5 px-3 py-1.5 text-xs transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-60 lg:flex"
       >
         <IconEPassport className="size-3.5 text-muted-foreground" />
         {t("nomad.cockpit.passport")}

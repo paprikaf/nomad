@@ -112,7 +112,7 @@ const messages = {
     },
     cockpit: {
       title: "Presence Cockpit",
-      subtitle: "Where can I be, safely?",
+      subtitle: "Know your next safe move",
       fiscalHome: "Fiscal home:",
       prBadge: "PR",
       nowIn: "Now in",
@@ -139,17 +139,32 @@ const messages = {
       usedOfLimitExit: "{{used}} of {{limit}} used · must exit by {{date}}",
       usedOfLimitNoExit: "{{used}} of {{limit}} days used",
       timelineTitle: "Trip timeline",
-      timelineHint: "Auto-added from inbox · tap to edit",
+      timelineHint: "Select a trip to review or edit",
+      noTripsTitle: "No travel recorded yet",
+      noTripsBody: "Add your first stay to start a reliable presence ledger.",
       days: "{{count}} days",
       fromInbox: "from inbox",
       pendingConfirmation: "awaiting confirmation",
       alertsTitle: "Proactive alerts",
       noAlerts: "All clear — no active alerts.",
       rulesTitle: "Your rule thresholds",
+      noRulesTitle: "No rules tracked yet",
+      noRulesBody: "Choose a fiscal home or destination to add relevant rules.",
       used: "{{days}} used",
       limit: "limit {{days}}",
       export: "Export presence log (CSV)",
+      findTripsInMail: "Find trips in Mail",
+      findTripsInMailPrompt:
+        "Find travel confirmations in Mail and add only new, well-supported stays to my ledger as pending items for me to review.",
       addTrip: "Add trip",
+      disclaimer:
+        "Estimates are informational only—verify legal, tax, and immigration decisions with a qualified professional.",
+      loadErrorTitle: "We couldn't load your presence ledger",
+      loadErrorBody:
+        "Your data has not been changed. Check the connection and try again.",
+      staleData:
+        "Live updates are temporarily unavailable; these figures may be stale.",
+      retry: "Retry",
       dismiss: "Dismiss",
       confirm: "Confirm",
       discard: "Discard",
@@ -245,6 +260,7 @@ const messages = {
       paceLast: "One last thing",
       skipForNow: "Skip for now",
       summaryNoHome: "not set",
+      summaryNoPassport: "not set",
       doneToast: "You're set — welcome to your cockpit.",
       fiscalTitle: "Where are you fiscally resident?",
       fiscalSubtitle:
@@ -253,6 +269,9 @@ const messages = {
       statusTitle: "What's your immigration status?",
       statusSubtitle:
         "Permanent residency and visas carry physical-presence minimums we'll protect.",
+      citizenshipTitle: "Which passport do you travel on?",
+      citizenshipSubtitle:
+        "Citizenship changes visa-free access and entry requirements. You can update this later.",
       statusPr: "Permanent Resident",
       statusPrNote: "e.g. Canada PR — 730 days / 5 yrs to keep it",
       statusCitizen: "Citizen (passport only)",
@@ -272,7 +291,7 @@ const messages = {
       mailFrequencyNote: "You can change scan frequency anytime in Settings.",
       summaryTitle: "You're set",
       summaryBody:
-        "Fiscal home {{home}} · {{count}} destinations tracked · inbox scan {{scan}}.",
+        "Fiscal home {{home}} · passport {{passport}} · {{count}} destinations tracked.",
       summaryScanOn: "on",
       summaryScanOff: "off",
       back: "Back",
@@ -281,6 +300,8 @@ const messages = {
     },
     demo: {
       disabledHint: "Turn off demo mode to edit your real data.",
+      sampleData: "Sample data",
+      samplePrefix: "Sample scenario.",
     },
   },
 };

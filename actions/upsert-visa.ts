@@ -8,18 +8,29 @@ import { visas } from "../server/db/schema.js";
 import { requireOwner } from "../server/lib/owner.js";
 import { isValidISODate } from "../shared/compliance.js";
 
+const isoDate = z
+  .string()
+  .length(10)
+  .refine(isValidISODate, "Expected a valid YYYY-MM-DD calendar date");
+
 export default defineAction({
   description:
     "Create or update a visa/permit/entry authorization with a hard validity window. Pass `id` to patch (only provided fields change); omit to create — label and expiresOn are then required. Scope with countryCode (one country) OR zone='schengen' (a Schengen visa grants the whole area). The compliance engine caps every matching 'must exit by' projection at the visa expiry and raises expiry alerts (warn ≤30 days, danger ≤14 days while inside).",
   schema: z.object({
-    id: z.string().optional().describe("Existing visa id to update"),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,128}$/, "Expected a valid visa id")
+      .optional()
+      .describe("Existing visa id to update"),
     label: z
       .string()
+      .min(1)
+      .max(160)
       .optional()
       .describe("Display name, e.g. 'Schengen C visa (multi-entry)'"),
     countryCode: z
       .string()
-      .length(2)
+      .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
       .nullable()
       .optional()
       .describe("ISO country the visa applies to (null for zone visas)"),
@@ -28,26 +39,18 @@ export default defineAction({
       .nullable()
       .optional()
       .describe("Zone the visa grants access to; days valid in any member"),
-    validFrom: z
-      .string()
+    validFrom: isoDate
       .nullable()
       .optional()
       .describe(
         "First valid day (inclusive), YYYY-MM-DD; null = already valid",
       ),
-    expiresOn: z
-      .string()
+    expiresOn: isoDate
       .optional()
       .describe("Last valid day (inclusive), YYYY-MM-DD"),
-    notes: z.string().nullable().optional(),
+    notes: z.string().max(4_000).nullable().optional(),
   }),
   run: async (args) => {
-    if (args.expiresOn && !isValidISODate(args.expiresOn)) {
-      throw new Error("expiresOn must be a valid YYYY-MM-DD date");
-    }
-    if (args.validFrom && !isValidISODate(args.validFrom)) {
-      throw new Error("validFrom must be a valid YYYY-MM-DD date");
-    }
     const owner = requireOwner();
     const db = getDb();
     const now = new Date().toISOString();

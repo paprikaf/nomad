@@ -1,14 +1,15 @@
-import { useActionMutation } from "@agent-native/core/client/hooks";
+import { sendToAgentChat } from "@agent-native/core/client/agent-chat";
 import { useT } from "@agent-native/core/client/i18n";
-import { IconMapPin, IconPlus, IconRadar2, IconX } from "@tabler/icons-react";
+import {
+  IconInfoCircle,
+  IconMailSearch,
+  IconMapPin,
+  IconPlus,
+} from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 
-import {
-  AlertsPanel,
-  alertBody,
-  alertTitle,
-} from "@/components/nomad/AlertsPanel";
+import { AlertsPanel } from "@/components/nomad/AlertsPanel";
 import { CountdownCard } from "@/components/nomad/CountdownCard";
 import { CountryQuickActions } from "@/components/nomad/CountryQuickActions";
 import { PassportChip } from "@/components/nomad/PassportChip";
@@ -19,12 +20,7 @@ import { VisaDialog } from "@/components/nomad/VisaDialog";
 import { WorldMap, type MapCountryStatus } from "@/components/nomad/WorldMap";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  downloadPresenceCsv,
-  severityBg,
-  severityBorder,
-  severityColor,
-} from "@/lib/nomad";
+import { downloadPresenceCsv } from "@/lib/nomad";
 import { useComplianceSnapshot } from "@/lib/use-compliance-snapshot";
 
 import { countryFlag, countryName } from "../../shared/countries";
@@ -32,7 +28,7 @@ import type { Stay } from "../../shared/types";
 
 const SEO_TITLE = "Nomad — Presence Cockpit";
 const SEO_DESCRIPTION =
-  "Residency and tax compliance cockpit for digital nomads: traffic-light presence map, Schengen 90/180 countdowns, tax-day counters, and inbox-scanned trips.";
+  "Residency and tax presence cockpit for digital nomads: a travel ledger, traffic-light map, Schengen 90/180 countdowns, and tax-day counters.";
 
 export function meta() {
   return [
@@ -49,9 +45,13 @@ export function meta() {
 export default function CockpitRoute() {
   const t = useT();
   const navigate = useNavigate();
-  const { data: snap, isDemo } = useComplianceSnapshot();
-  const scan = useActionMutation("scan-inbox");
-  const [dismissedAlertId, setDismissedAlertId] = useState<string | null>(null);
+  const {
+    data: snap,
+    isDemo,
+    error,
+    refetch,
+    isFetching,
+  } = useComplianceSnapshot();
   const [dialogStay, setDialogStay] = useState<Stay | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogCountry, setDialogCountry] = useState<string | undefined>();
@@ -103,18 +103,7 @@ export default function CockpitRoute() {
     return present.reduce((a, b) => (a.pct >= b.pct ? a : b));
   }, [snap]);
 
-  const bannerAlert = useMemo(() => {
-    if (!snap) return null;
-    return (
-      snap.alerts.find(
-        (a) =>
-          a.id !== dismissedAlertId &&
-          (a.severity === "danger" || a.severity === "warn"),
-      ) ?? null
-    );
-  }, [snap, dismissedAlertId]);
-
-  if (!snap) {
+  if (!snap && !error) {
     return (
       <div className="flex h-full flex-col gap-4 p-6">
         <Skeleton className="h-14 w-full" />
@@ -126,13 +115,32 @@ export default function CockpitRoute() {
     );
   }
 
+  if (!snap) {
+    return (
+      <div className="grid h-full place-items-center p-6">
+        <div className="nomad-panel max-w-md p-6 text-center">
+          <div className="text-base font-semibold">
+            {t("nomad.cockpit.loadErrorTitle")}
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t("nomad.cockpit.loadErrorBody")}
+          </p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            disabled={isFetching}
+            onClick={() => void refetch()}
+          >
+            {t("nomad.cockpit.retry")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!snap.profile.onboardingCompleted) {
     return <Navigate to="/onboarding" replace />;
   }
-
-  const lastScan = snap.profile.lastScanAt
-    ? relativeDays(snap.profile.lastScanAt, t)
-    : t("nomad.cockpit.scanNever");
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -162,7 +170,10 @@ export default function CockpitRoute() {
             </b>
           </div>
         )}
-        <PassportChip citizenshipCountry={snap.profile.citizenshipCountry} />
+        <PassportChip
+          citizenshipCountry={snap.profile.citizenshipCountry}
+          disabled={isDemo}
+        />
         {snap.currentLocation && (
           <div className="nomad-chip hidden items-center gap-1.5 px-3 py-1.5 text-xs md:flex">
             <IconMapPin className="size-3.5 text-muted-foreground" />
@@ -175,58 +186,70 @@ export default function CockpitRoute() {
             · {t("nomad.cockpit.dayN", { day: snap.currentLocation.dayNumber })}
           </div>
         )}
-        <div className="ml-auto flex items-center gap-3">
-          {snap.profile.mailScanEnabled && (
-            <div
-              className="nomad-chip hidden items-center gap-2 px-3 py-1.5 text-xs lg:flex"
-              title={t("nomad.cockpit.lastScan", { time: lastScan })}
-            >
-              <span
-                className="nomad-pulse inline-block h-2 w-2 rounded-full"
-                style={{ background: "hsl(var(--safe))" }}
-              />
-              {t("nomad.cockpit.inboxScan")} · {lastScan}
-            </div>
+        <div className="ml-auto flex items-center gap-2">
+          {isDemo && (
+            <span className="nomad-chip border-primary/25 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+              {t("nomad.demo.sampleData")}
+            </span>
           )}
           <Button
             size="sm"
+            variant="outline"
             className="rounded-lg text-xs font-medium"
-            disabled={isDemo || scan.isPending}
+            disabled={isDemo}
             title={isDemo ? t("nomad.demo.disabledHint") : undefined}
-            onClick={() => scan.mutate({})}
+            onClick={() =>
+              sendToAgentChat({
+                message: t("nomad.cockpit.findTripsInMailPrompt"),
+                submit: true,
+                openSidebar: true,
+              })
+            }
           >
-            <IconRadar2 className="size-3.5" />
-            {scan.isPending
-              ? t("nomad.cockpit.scanning")
-              : t("nomad.cockpit.scanNow")}
+            <IconMailSearch className="size-3.5" />
+            {t("nomad.cockpit.findTripsInMail")}
+          </Button>
+          <Button
+            size="sm"
+            className="rounded-lg text-xs font-medium"
+            disabled={isDemo}
+            title={isDemo ? t("nomad.demo.disabledHint") : undefined}
+            onClick={() => {
+              setDialogStay(null);
+              setDialogCountry(undefined);
+              setDialogOpen(true);
+            }}
+          >
+            <IconPlus className="size-3.5" />
+            {t("nomad.cockpit.addTrip")}
           </Button>
         </div>
       </header>
 
-      {/* Alert banner */}
-      {bannerAlert && (
-        <div
-          className="mx-4 mt-4 flex items-center gap-3 rounded-xl px-4 py-3 text-sm md:mx-6"
-          style={{
-            background: severityBg(bannerAlert.severity),
-            border: `1px solid ${severityBorder(bannerAlert.severity)}`,
-          }}
-        >
-          <span
-            className="inline-block h-2 w-2 shrink-0 rounded-full"
-            style={{ background: severityColor(bannerAlert.severity) }}
-          />
-          <span className="min-w-0">
-            <b>{alertTitle(bannerAlert, t)}</b> — {alertBody(bannerAlert, t)}
-          </span>
+      <div className="flex items-start gap-2 border-b border-border/70 bg-muted/30 px-4 py-2 text-xs text-muted-foreground md:px-6">
+        <IconInfoCircle className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          {isDemo ? `${t("nomad.demo.samplePrefix")} ` : ""}
+          {t("nomad.cockpit.disclaimer")}
+        </span>
+        {error && (
           <button
             type="button"
-            onClick={() => setDismissedAlertId(bannerAlert.id)}
-            className="ml-auto cursor-pointer text-muted-foreground hover:text-foreground"
-            aria-label={t("nomad.cockpit.dismiss")}
+            className="ml-auto shrink-0 font-medium text-foreground underline-offset-4 hover:underline"
+            disabled={isFetching}
+            onClick={() => void refetch()}
           >
-            <IconX className="size-4" />
+            {t("nomad.cockpit.retry")}
           </button>
+        )}
+      </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="mx-4 mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs text-destructive md:mx-6"
+        >
+          {t("nomad.cockpit.staleData")}
         </div>
       )}
 
@@ -269,30 +292,14 @@ export default function CockpitRoute() {
               ) : null
             }
           />
-          <div className="relative">
-            <TripTimeline
-              snapshot={snap}
-              disabled={isDemo}
-              onEdit={(stay) => {
-                setDialogStay(stay);
-                setDialogOpen(true);
-              }}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="absolute right-3 top-3 hidden h-7 rounded-lg text-xs sm:inline-flex"
-              disabled={isDemo}
-              title={isDemo ? t("nomad.demo.disabledHint") : undefined}
-              onClick={() => {
-                setDialogStay(null);
-                setDialogOpen(true);
-              }}
-            >
-              <IconPlus className="size-3.5" />
-              {t("nomad.cockpit.addTrip")}
-            </Button>
-          </div>
+          <TripTimeline
+            snapshot={snap}
+            disabled={isDemo}
+            onEdit={(stay) => {
+              setDialogStay(stay);
+              setDialogOpen(true);
+            }}
+          />
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4 lg:col-span-4 lg:overflow-y-auto lg:pr-1">
@@ -326,16 +333,4 @@ export default function CockpitRoute() {
       />
     </div>
   );
-}
-
-function relativeDays(
-  iso: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
-  const days = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000),
-  );
-  if (days === 0) return t("nomad.cockpit.today");
-  return t("nomad.cockpit.daysAgo", { count: days });
 }

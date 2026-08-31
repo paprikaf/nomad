@@ -1,5 +1,5 @@
 import { useT } from "@agent-native/core/client/i18n";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconScale } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import { severityColor, statusLabelKey } from "@/lib/nomad";
@@ -25,6 +25,17 @@ export function RuleCards({
         {t("nomad.cockpit.rulesTitle")}
       </div>
       <div className="space-y-3">
+        {rules.length === 0 && (
+          <div className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 text-center">
+            <IconScale className="mb-2 size-5 text-muted-foreground" />
+            <div className="text-sm font-medium">
+              {t("nomad.cockpit.noRulesTitle")}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {t("nomad.cockpit.noRulesBody")}
+            </div>
+          </div>
+        )}
         {rules.map((rc) => {
           const color = severityColor(rc.severity);
           return (

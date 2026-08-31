@@ -1,5 +1,5 @@
 import { useT } from "@agent-native/core/client/i18n";
-import { IconMailFast } from "@tabler/icons-react";
+import { IconMailFast, IconPlaneDeparture } from "@tabler/icons-react";
 
 import { formatStayRange, severityColor, stayLengthDays } from "@/lib/nomad";
 
@@ -45,66 +45,78 @@ export function TripTimeline({
           {t("nomad.cockpit.timelineHint")}
         </div>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {recent.map((trip) => (
-          <button
-            key={trip.id}
-            type="button"
-            disabled={disabled}
-            title={disabled ? t("nomad.demo.disabledHint") : undefined}
-            onClick={() => onEdit(trip)}
-            className="w-[150px] shrink-0 cursor-pointer rounded-xl border border-border bg-popover p-3 text-left transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span
-                className="inline-block h-2 w-2 shrink-0 rounded-full"
-                style={{
-                  background: severityColor(
-                    severityByCountry.get(trip.countryCode) ?? "safe",
-                  ),
-                }}
-              />
-              <span className="truncate">{formatStayRange(trip)}</span>
-            </div>
-            <div className="mt-1 truncate font-semibold">
-              {countryFlag(trip.countryCode)} {stayPlace(trip)}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {t("nomad.cockpit.days", {
-                count: stayLengthDays(trip, snapshot.today),
-              })}
-            </div>
-            {trip.source === "inbox" && (
+      {recent.length === 0 && pending.length === 0 ? (
+        <div className="flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-border px-4 text-center">
+          <IconPlaneDeparture className="mb-2 size-5 text-muted-foreground" />
+          <div className="text-sm font-medium">
+            {t("nomad.cockpit.noTripsTitle")}
+          </div>
+          <div className="mt-1 max-w-sm text-xs text-muted-foreground">
+            {t("nomad.cockpit.noTripsBody")}
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {recent.map((trip) => (
+            <button
+              key={trip.id}
+              type="button"
+              disabled={disabled}
+              title={disabled ? t("nomad.demo.disabledHint") : undefined}
+              onClick={() => onEdit(trip)}
+              className="w-[150px] shrink-0 cursor-pointer rounded-xl border border-border bg-popover p-3 text-left transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{
+                    background: severityColor(
+                      severityByCountry.get(trip.countryCode) ?? "safe",
+                    ),
+                  }}
+                />
+                <span className="truncate">{formatStayRange(trip)}</span>
+              </div>
+              <div className="mt-1 truncate font-semibold">
+                {countryFlag(trip.countryCode)} {stayPlace(trip)}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {t("nomad.cockpit.days", {
+                  count: stayLengthDays(trip, snapshot.today),
+                })}
+              </div>
+              {trip.source === "inbox" && (
+                <div className="nomad-chip mt-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <IconMailFast className="size-3" />
+                  {t("nomad.cockpit.fromInbox")}
+                </div>
+              )}
+            </button>
+          ))}
+          {pending.map((trip) => (
+            <button
+              key={trip.id}
+              type="button"
+              disabled={disabled}
+              title={disabled ? t("nomad.demo.disabledHint") : undefined}
+              onClick={() => onEdit(trip)}
+              className="w-[150px] shrink-0 cursor-pointer rounded-xl border border-dashed border-ring/50 bg-popover/50 p-3 text-left transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
+                <span className="truncate">{formatStayRange(trip)}</span>
+              </div>
+              <div className="mt-1 truncate font-semibold">
+                {countryFlag(trip.countryCode)} {stayPlace(trip)}
+              </div>
               <div className="nomad-chip mt-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] text-muted-foreground">
                 <IconMailFast className="size-3" />
-                {t("nomad.cockpit.fromInbox")}
+                {t("nomad.cockpit.pendingConfirmation")}
               </div>
-            )}
-          </button>
-        ))}
-        {pending.map((trip) => (
-          <button
-            key={trip.id}
-            type="button"
-            disabled={disabled}
-            title={disabled ? t("nomad.demo.disabledHint") : undefined}
-            onClick={() => onEdit(trip)}
-            className="w-[150px] shrink-0 cursor-pointer rounded-xl border border-dashed border-ring/50 bg-popover/50 p-3 text-left transition-colors hover:border-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
-              <span className="truncate">{formatStayRange(trip)}</span>
-            </div>
-            <div className="mt-1 truncate font-semibold">
-              {countryFlag(trip.countryCode)} {stayPlace(trip)}
-            </div>
-            <div className="nomad-chip mt-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] text-muted-foreground">
-              <IconMailFast className="size-3" />
-              {t("nomad.cockpit.pendingConfirmation")}
-            </div>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
