@@ -38,12 +38,38 @@ export function dateFromDayNumber(day: number): string {
   return new Date(day * MS_PER_DAY).toISOString().slice(0, 10);
 }
 
-/** Today's calendar date in the given timezone-free local sense. */
-export function todayISO(now: Date = new Date()): string {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+/** Whether `value` is an IANA time-zone identifier supported by this runtime. */
+export function isValidTimeZone(value: string): boolean {
+  if (value.length === 0 || value.length > 100) return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Canonicalize an IANA time-zone identifier, or return null when invalid. */
+export function canonicalTimeZone(value: string): string | null {
+  if (!isValidTimeZone(value)) return null;
+  return new Intl.DateTimeFormat("en-US", { timeZone: value }).resolvedOptions()
+    .timeZone;
+}
+
+/** Today's calendar date in the traveler's persisted IANA time zone. */
+export function todayISO(
+  now: Date = new Date(),
+  timeZone: string = "UTC",
+): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 export function addDays(date: string, days: number): string {
@@ -181,11 +207,18 @@ export function computeMustExitBy(
   const history = presenceDaySet(stays, t - window + 1, t);
   const historyArr = [...history].sort((a, b) => a - b);
 
+  let firstHistoricalDay = 0;
   for (let future = t; future <= t + 366; future++) {
     const windowStart = future - window + 1;
-    // Historical days still inside the window:
-    let count = 0;
-    for (const d of historyArr) if (d >= windowStart && d <= t) count++;
+    while (
+      firstHistoricalDay < historyArr.length &&
+      historyArr[firstHistoricalDay] < windowStart
+    ) {
+      firstHistoricalDay++;
+    }
+    // Historical days still inside the window. The cursor advances at most
+    // once per historical day across the whole simulation.
+    let count = historyArr.length - firstHistoricalDay;
     // Simulated stayed days (today+1 .. future):
     count += Math.max(0, future - t);
     if (count > limit) return dateFromDayNumber(future - 1);
@@ -210,12 +243,20 @@ export function computeReEnterOn(
   const history = [...presenceDaySet(stays, t - window + 1, t)].sort(
     (a, b) => a - b,
   );
-  for (let future = t + 1; future <= t + window + 1; future++) {
-    const windowStart = future - window + 1;
-    const stillCounted = history.filter((d) => d >= windowStart).length;
-    if (stillCounted + 1 <= rule.limitDays) return dateFromDayNumber(future);
+  const historicalDaysAllowed = rule.limitDays - 1;
+  if (historicalDaysAllowed < 0) return null;
+  if (history.length <= historicalDaysAllowed) {
+    return dateFromDayNumber(t + 1);
   }
-  return null;
+
+  // To admit one new day, enough of the oldest history must age out that at
+  // most `limit - 1` historical days remain. If `cutoff` is the newest day
+  // that must expire, the first legal future date is exactly cutoff + window.
+  // This is O(history log history), rather than filtering the full history for
+  // every one of up to `window` future days (O(window^2) at the input cap).
+  const cutoffIndex = history.length - historicalDaysAllowed - 1;
+  const earliest = Math.max(t + 1, history[cutoffIndex] + window);
+  return dateFromDayNumber(earliest);
 }
 
 function severityFor(
@@ -508,6 +549,20 @@ function computeAlerts(
         countryCode: stay.countryCode,
         city: stay.city ?? "",
         entryDate: stay.entryDate,
+        ...(stay.exitDate ? { exitDate: stay.exitDate } : {}),
+        ...(stay.sourceAccount ? { sourceAccount: stay.sourceAccount } : {}),
+        ...(stay.sourceMessageId
+          ? { sourceMessageId: stay.sourceMessageId }
+          : {}),
+        ...(stay.sourceThreadId ? { sourceThreadId: stay.sourceThreadId } : {}),
+        ...(stay.evidenceKind ? { evidenceKind: stay.evidenceKind } : {}),
+        ...(stay.evidenceProvider
+          ? { evidenceProvider: stay.evidenceProvider }
+          : {}),
+        ...(stay.evidenceConfidence !== null &&
+        stay.evidenceConfidence !== undefined
+          ? { evidenceConfidence: stay.evidenceConfidence }
+          : {}),
       },
     });
   }
@@ -523,7 +578,7 @@ export function computeSnapshot(
   stays: Stay[],
   rules: Rule[],
   profile: NomadProfile,
-  today: string = todayISO(),
+  today: string = todayISO(new Date(), profile.timeZone),
   visas: Visa[] = [],
 ): ComplianceSnapshot {
   const confirmed = stays.filter((s) => s.status === "confirmed");

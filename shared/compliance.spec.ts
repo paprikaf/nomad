@@ -12,6 +12,8 @@ import {
   dayNumber,
   dateFromDayNumber,
   findCurrentLocation,
+  isValidTimeZone,
+  todayISO,
 } from "./compliance";
 import type { NomadProfile, Rule, Stay, Visa } from "./types";
 
@@ -87,6 +89,14 @@ const caPrRule = rule({
 });
 
 describe("day math", () => {
+  it("uses the persisted IANA time zone to determine today's calendar date", () => {
+    const instant = new Date("2026-01-01T01:30:00.000Z");
+    expect(todayISO(instant, "America/Toronto")).toBe("2025-12-31");
+    expect(todayISO(instant, "Asia/Tokyo")).toBe("2026-01-01");
+    expect(isValidTimeZone("America/Toronto")).toBe(true);
+    expect(isValidTimeZone("Definitely/Not_A_Zone")).toBe(false);
+  });
+
   it("round-trips dates through day numbers", () => {
     expect(dateFromDayNumber(dayNumber("2026-07-20"))).toBe("2026-07-20");
     expect(addDays("2026-02-27", 2)).toBe("2026-03-01");
@@ -164,6 +174,28 @@ describe("rolling-window rules (Schengen 90/180)", () => {
     const reEnter = computeReEnterOn(schengenRule, stays, TODAY);
     expect(reEnter).not.toBeNull();
     expect(dayNumber(reEnter!)).toBeGreaterThan(dayNumber(TODAY));
+  });
+
+  it("handles the maximum rolling window without quadratic re-entry work", () => {
+    const maxWindow = 36_600;
+    const maxWindowRule = rule({
+      name: "Maximum supported rolling window",
+      kind: "rolling-window",
+      countryCode: "PT",
+      limitDays: 1,
+      windowDays: maxWindow,
+    });
+    const continuousHistory = [
+      stay({
+        countryCode: "PT",
+        entryDate: addDays(TODAY, -(maxWindow - 1)),
+        exitDate: TODAY,
+      }),
+    ];
+
+    expect(computeReEnterOn(maxWindowRule, continuousHistory, TODAY)).toBe(
+      addDays(TODAY, maxWindow),
+    );
   });
 });
 
@@ -408,6 +440,7 @@ describe("visas", () => {
       stays,
       [schengenRule],
       {
+        timeZone: "America/Toronto",
         fiscalHomeCountry: "CA",
         citizenshipCountry: "TN",
         immigrationStatus: "pr",
@@ -431,6 +464,7 @@ describe("visas", () => {
 
 describe("snapshot", () => {
   const profile: NomadProfile = {
+    timeZone: "America/Toronto",
     fiscalHomeCountry: "CA",
     citizenshipCountry: "TN",
     immigrationStatus: "pr",

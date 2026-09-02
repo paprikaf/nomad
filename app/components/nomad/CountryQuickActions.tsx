@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { browserTimeZone } from "@/lib/browser-time-zone";
 import { formatShortDate, severityColor, statusLabelKey } from "@/lib/nomad";
 
 import { visaAppliesToCountry } from "../../../shared/compliance";
@@ -42,11 +43,12 @@ export function CountryQuickActions({
 }) {
   const t = useT();
   const { locale } = useLocale();
-  const upsertStay = useActionMutation("upsert-stay");
+  const moveHereMutation = useActionMutation("move-here");
   const updateProfile = useActionMutation("update-profile");
 
   const country = snapshot.countries.find((c) => c.countryCode === code);
   const ruleById = new Map(snapshot.rules.map((rc) => [rc.rule.id, rc]));
+  const countryRuleIds = new Set(country?.ruleIds ?? []);
   const countryRules = (country?.ruleIds ?? []).flatMap((id) => {
     const rc = ruleById.get(id);
     return rc ? [rc] : [];
@@ -62,7 +64,7 @@ export function CountryQuickActions({
   function askAgent() {
     const name = countryName(code, locale);
     const applicableRules = snapshot.rules.filter((rc) =>
-      country ? country.ruleIds.includes(rc.rule.id) : false,
+      countryRuleIds.has(rc.rule.id),
     );
     const p = snapshot.profile;
     const context = [
@@ -106,20 +108,9 @@ export function CountryQuickActions({
 
   async function moveHere() {
     try {
-      // Close only the stay we're actually in — not future open-ended
-      // bookings (e.g. an upcoming inbox-detected trip).
-      const openStay = snapshot.trips.find(
-        (s) => s.exitDate === null && s.entryDate <= snapshot.today,
-      );
-      if (openStay) {
-        await upsertStay.mutateAsync({
-          id: openStay.id,
-          exitDate: snapshot.today,
-        });
-      }
-      await upsertStay.mutateAsync({
+      await moveHereMutation.mutateAsync({
         countryCode: code,
-        entryDate: snapshot.today,
+        timeZone: browserTimeZone(),
       });
       toast.success(
         t("nomad.quick.hereNowDone", { place: countryName(code, locale) }),
@@ -195,7 +186,7 @@ export function CountryQuickActions({
           <QuickButton
             icon={<IconMapPin className="size-4" />}
             label={t("nomad.quick.hereNow")}
-            disabled={disabled || upsertStay.isPending}
+            disabled={disabled || moveHereMutation.isPending}
             title={disabled ? t("nomad.demo.disabledHint") : undefined}
             onClick={() => void moveHere()}
           />

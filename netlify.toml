@@ -1,8 +1,13 @@
 [build]
-command = "export DATABASE_URL=\"${NETLIFY_DATABASE_URL:-$DATABASE_URL}\" && NITRO_PRESET=netlify pnpm build"
+command = "export DATABASE_URL=\"${NETLIFY_DATABASE_URL:-$DATABASE_URL}\" && NITRO_PRESET=netlify pnpm build && if [ \"${CONTEXT:-}\" = \"production\" ] || [ \"${AGENT_NATIVE_RUN_RELEASE_MIGRATIONS:-}\" = \"1\" ]; then pnpm migrate:production; fi"
 publish = "dist"
 functions = ".netlify/functions-internal"
 
 [build.environment]
 NITRO_PRESET = "netlify"
 NPM_CONFIG_PRODUCTION = "false"
+
+[context.production.environment]
+# The release step above owns schema setup in production, so request functions
+# skip migration probes on every serverless invocation.
+AGENT_NATIVE_RELEASE_MIGRATIONS = "1"

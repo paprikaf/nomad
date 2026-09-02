@@ -61,14 +61,22 @@ export function statusLabelKey(statusKey: StatusKey): string {
   }
 }
 
+const SHORT_DATE = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+});
+const SHORT_DATE_WITH_YEAR = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
 /** "Aug 8" style short date from YYYY-MM-DD, in the browser locale. */
 export function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    ...(y !== new Date().getFullYear() ? { year: "numeric" } : {}),
-  }).format(new Date(y, m - 1, d));
+  const formatter =
+    y === new Date().getFullYear() ? SHORT_DATE : SHORT_DATE_WITH_YEAR;
+  return formatter.format(new Date(y, m - 1, d));
 }
 
 /** "Jun 9 – Jul 20" (or "Jun 9 →" for open stays). */
@@ -107,10 +115,13 @@ export function escapeCsvCell(value: string | null): string {
 }
 
 /** Build and download the presence log as a CSV file. */
-export function downloadPresenceCsv(stays: Stay[], filename: string): void {
+export function downloadPresenceCsv(
+  stays: Stay[],
+  filename: string,
+  today: string,
+): void {
   const header =
     "country_code,country,city,entry_date,exit_date,days,source,status,notes";
-  const today = new Date().toISOString().slice(0, 10);
   const lines = stays.map((s) =>
     [
       escapeCsvCell(s.countryCode),

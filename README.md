@@ -50,6 +50,8 @@ Never publish a deployment with `AUTH_DISABLED=true`.
 
 - `pnpm dev` — start the dev server
 - `pnpm build` / `pnpm start` — production build and start
+- `pnpm migrate:production` — apply framework and Nomad migrations during a
+  release, before production traffic reaches the new build
 - `pnpm typecheck` — typecheck the app
 - `pnpm test` — run the compliance-engine test suite
 - `pnpm action <name>` — invoke an app action from the CLI
@@ -71,6 +73,10 @@ Configure these values in the host's secret manager:
 - `A2A_SECRET` — a unique random value used to sign production A2A requests.
 - `APP_URL` — the canonical HTTPS origin of the deployed app.
 - `DATABASE_AUTH_TOKEN` — only when required by the database provider.
+
+The included `netlify.toml` runs `pnpm migrate:production` after a successful
+production build. On another host, add that command to its release phase rather
+than running migrations on the first request.
 
 Do not use `AUTH_DISABLED` for a public or shared preview. A future anonymous
 demo should use a server-enforced, read-only sample-data boundary.

@@ -7,12 +7,20 @@ import { getDb } from "../server/db/index.js";
 import { rules } from "../server/db/schema.js";
 import { requireOwner } from "../server/lib/owner.js";
 import { saveProfile } from "../server/lib/profile.js";
+import { canonicalTimeZone, isValidTimeZone } from "../shared/compliance.js";
 import { presetsForCountry } from "../shared/countries.js";
 
 export default defineAction({
   description:
-    "Patch the nomad profile (fiscal home country, immigration status, goals, tracked countries, inbox-scan preference, onboarding completion). Only provided fields change. ANY ISO 3166-1 country is valid. When tracked countries or the fiscal home change, sensible default rules are seeded per country — curated presets (Schengen 90/180, DTV caps, PR minimums) where known, a generic 183-day tax counter otherwise — without duplicating existing rules.",
+    "Patch the nomad profile (IANA time zone, fiscal home country, immigration status, goals, tracked countries, inbox-scan preference, onboarding completion). Only provided fields change. ANY ISO 3166-1 country is valid. When tracked countries or the fiscal home change, sensible default rules are seeded per country — curated presets (Schengen 90/180, DTV caps, PR minimums) where known, a generic 183-day tax counter otherwise — without duplicating existing rules.",
   schema: z.object({
+    timeZone: z
+      .string()
+      .min(1)
+      .max(100)
+      .refine(isValidTimeZone, "Expected a valid IANA time-zone identifier")
+      .optional()
+      .describe("IANA time zone used to determine today's calendar date"),
     fiscalHomeCountry: z
       .string()
       .regex(/^[A-Za-z]{2}$/, "Expected an ISO 3166-1 alpha-2 country code")
@@ -63,6 +71,9 @@ export default defineAction({
     if (typeof patch.citizenshipCountry === "string") {
       patch.citizenshipCountry = patch.citizenshipCountry.toUpperCase();
     }
+    if (typeof patch.timeZone === "string") {
+      patch.timeZone = canonicalTimeZone(patch.timeZone) ?? "UTC";
+    }
     const profile = await saveProfile(patch);
 
     const seeded =
@@ -98,7 +109,7 @@ async function ensurePresetRules(
     .where(and(eq(rules.ownerEmail, owner), isNotNull(rules.presetSlug)));
   const existingSlugs = new Set(existing.map((r) => r.presetSlug));
   const now = new Date().toISOString();
-  const seeded: Array<{ id: string; name: string }> = [];
+  const pendingRows: Array<typeof rules.$inferInsert> = [];
 
   const codes = new Set(
     [
@@ -137,9 +148,16 @@ async function ensurePresetRules(
         createdAt: now,
         updatedAt: now,
       };
-      await db.insert(rules).values(row);
-      seeded.push({ id: row.id, name: row.name });
+      pendingRows.push(row);
     }
   }
-  return seeded;
+  if (pendingRows.length === 0) return [];
+
+  // One portable insert keeps large onboarding selections fast. The unique
+  // owner/preset index also makes concurrent profile saves idempotent.
+  return db
+    .insert(rules)
+    .values(pendingRows)
+    .onConflictDoNothing({ target: [rules.ownerEmail, rules.presetSlug] })
+    .returning({ id: rules.id, name: rules.name });
 }

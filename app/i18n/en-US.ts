@@ -164,6 +164,8 @@ const messages = {
         "Your data has not been changed. Check the connection and try again.",
       staleData:
         "Live updates are temporarily unavailable; these figures may be stale.",
+      timeZoneSyncError:
+        "We couldn't sync this browser's time zone. Date-sensitive agent answers may be stale until you retry.",
       retry: "Retry",
       dismiss: "Dismiss",
       confirm: "Confirm",
@@ -181,6 +183,17 @@ const messages = {
         "Only {{used}} of {{limit}} days so far — {{needed}} more needed before year-end.",
       visaBody: "Expires {{date}} — {{days}} days left.",
       visaExpiredBody: "Expired on {{date}}.",
+      confirmed: "Trip confirmed and added to your compliance ledger.",
+      discarded: "Mail candidate discarded.",
+    },
+    mailEvidence: {
+      label: "Mail evidence",
+      confidence: "{{confidence}}% confidence",
+      flight: "Flight",
+      rail: "Rail",
+      accommodation: "Accommodation",
+      visa: "Visa",
+      entry: "Entry record",
     },
     stay: {
       addTitle: "Add trip",

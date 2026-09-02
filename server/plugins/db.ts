@@ -21,7 +21,7 @@ const schemaTables = Object.values(schema).filter(isDrizzleTable);
 // Convention: every migration entry carries a unique `name:` slug so parallel
 // branches can never claim each other's version numbers (see the storing-data
 // skill for the full rationale).
-const runNomadMigrations = runMigrations(
+export const runNomadMigrations = runMigrations(
   [
     {
       version: 1,
@@ -105,6 +105,32 @@ ALTER TABLE visas ADD COLUMN IF NOT EXISTS owner_email TEXT NOT NULL DEFAULT 'lo
       version: 10,
       name: "nomad-rules-owner-preset-slug-unique-idx",
       sql: `CREATE UNIQUE INDEX IF NOT EXISTS rules_owner_preset_slug_unique_idx ON rules (owner_email, preset_slug)`,
+    },
+    {
+      version: 11,
+      name: "nomad-stays-mail-provenance-columns",
+      sql: `ALTER TABLE stays ADD COLUMN IF NOT EXISTS source_ref TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS source_account TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS source_message_id TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS source_thread_id TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS evidence_kind TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS evidence_provider TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS evidence_confidence INTEGER`,
+    },
+    {
+      version: 12,
+      name: "nomad-stays-owner-source-ref-unique-idx",
+      sql: `CREATE UNIQUE INDEX IF NOT EXISTS stays_owner_source_ref_unique_idx ON stays (owner_email, source_ref)`,
+    },
+    {
+      version: 13,
+      name: "nomad-stays-write-lock-and-open-guard",
+      sql: `CREATE TABLE IF NOT EXISTS stay_owner_locks (
+    owner_email TEXT PRIMARY KEY,
+    updated_at TEXT NOT NULL
+  );
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS open_guard TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS stays_open_guard_unique_idx ON stays (open_guard)`,
     },
   ],
   { table: "nomad_migrations" },

@@ -6,7 +6,13 @@ import { getDb } from "../server/db/index.js";
 import { rules, stays, visas } from "../server/db/schema.js";
 import { requireOwner } from "../server/lib/owner.js";
 import { getProfile } from "../server/lib/profile.js";
-import { computeSnapshot, isValidISODate } from "../shared/compliance.js";
+import {
+  canonicalTimeZone,
+  computeSnapshot,
+  isValidISODate,
+  isValidTimeZone,
+  todayISO,
+} from "../shared/compliance.js";
 import type { Rule, Stay, Visa } from "../shared/types.js";
 
 const isoDate = z
@@ -23,6 +29,13 @@ export default defineAction({
       .describe(
         "Compute the snapshot as of this YYYY-MM-DD date (default: today)",
       ),
+    timeZone: z
+      .string()
+      .min(1)
+      .max(100)
+      .refine(isValidTimeZone, "Expected a valid IANA time-zone identifier")
+      .optional()
+      .describe("Optional browser IANA time zone used when asOf is omitted"),
   }),
   http: { method: "GET" },
   run: async (args) => {
@@ -38,7 +51,13 @@ export default defineAction({
       stayRows as Stay[],
       ruleRows as Rule[],
       profile,
-      args.asOf,
+      args.asOf ??
+        todayISO(
+          new Date(),
+          args.timeZone
+            ? (canonicalTimeZone(args.timeZone) ?? profile.timeZone)
+            : profile.timeZone,
+        ),
       visaRows as Visa[],
     );
   },

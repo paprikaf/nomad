@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { CountryPicker } from "@/components/nomad/CountryPicker";
 import { Button } from "@/components/ui/button";
+import { browserTimeZone, useBrowserTimeZone } from "@/lib/browser-time-zone";
 import { cn } from "@/lib/utils";
 
 import {
@@ -48,8 +49,13 @@ export default function OnboardingRoute() {
   const { locale } = useLocale();
   const navigate = useNavigate();
   const updateProfile = useActionMutation("update-profile");
-  const upsertStay = useActionMutation("upsert-stay");
-  const { data: snapshot } = useActionQuery("compliance-status", {});
+  const moveHere = useActionMutation("move-here");
+  const resolvedTimeZone = useBrowserTimeZone();
+  const { data: snapshot } = useActionQuery(
+    "compliance-status",
+    resolvedTimeZone ? { timeZone: resolvedTimeZone } : {},
+    { enabled: resolvedTimeZone !== null },
+  );
   const snap = snapshot as ComplianceSnapshot | undefined;
   const existingLocation = snap?.currentLocation ?? null;
 
@@ -113,6 +119,7 @@ export default function OnboardingRoute() {
     setFinishing(true);
     try {
       await updateProfile.mutateAsync({
+        timeZone: browserTimeZone(),
         fiscalHomeCountry: fiscal,
         citizenshipCountry: citizenship,
         immigrationStatus: status === "none" ? null : status,
@@ -133,10 +140,9 @@ export default function OnboardingRoute() {
         locationCode &&
         (!existingLocation || existingLocation.countryCode !== locationCode);
       if (needsStay) {
-        await upsertStay.mutateAsync({
+        await moveHere.mutateAsync({
           countryCode: locationCode,
-          entryDate: todayISODate(),
-          source: "manual",
+          timeZone: browserTimeZone(),
         });
       }
       toast.success(t("nomad.wizard.doneToast"));
@@ -246,7 +252,7 @@ export default function OnboardingRoute() {
               className="nomad-track h-1.5 flex-1 overflow-hidden rounded-full"
             >
               <div
-                className="h-full rounded-full transition-all"
+                className="h-full rounded-full transition-[width]"
                 style={{
                   width: i < step ? "100%" : "0%",
                   background: "hsl(var(--primary))",
@@ -482,13 +488,6 @@ export default function OnboardingRoute() {
       </div>
     </div>
   );
-}
-
-function todayISODate(): string {
-  const now = new Date();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${m}-${d}`;
 }
 
 function StepShell({

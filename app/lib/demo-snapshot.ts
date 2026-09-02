@@ -184,6 +184,7 @@ function demoVisas(today: string): Visa[] {
 
 function demoProfile(today: string): NomadProfile {
   return {
+    timeZone: "UTC",
     fiscalHomeCountry: "PT",
     citizenshipCountry: "BR",
     immigrationStatus: "pr",

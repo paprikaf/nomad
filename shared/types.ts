@@ -22,6 +22,15 @@ export interface Stay {
   /** `pending` stays were auto-detected (e.g. from an inbox scan) and await user confirmation. */
   status: StayStatus;
   notes: string | null;
+  /** Opaque, Nomad-derived identity used to deduplicate staged Mail evidence. */
+  sourceRef?: string | null;
+  sourceAccount?: string | null;
+  sourceMessageId?: string | null;
+  sourceThreadId?: string | null;
+  evidenceKind?: "flight" | "rail" | "accommodation" | "visa" | "entry" | null;
+  evidenceProvider?: string | null;
+  /** Integer confidence percentage from 80 through 100. */
+  evidenceConfidence?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -141,6 +150,8 @@ export interface VisaComputation {
 export type ImmigrationStatus = "pr" | "citizen" | "visa";
 
 export interface NomadProfile {
+  /** IANA time zone used to decide which calendar date is "today". */
+  timeZone: string;
   fiscalHomeCountry: string | null;
   /** Passport country — drives which visa regimes apply to the user. */
   citizenshipCountry: string | null;

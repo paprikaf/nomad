@@ -68,13 +68,10 @@ export default function CountryRoute() {
   }, [isDemo, snap, stays, code]);
 
   const country = snap?.countries.find((c) => c.countryCode === code);
-  const applicableRules = useMemo(
-    () =>
-      (snap?.rules ?? []).filter((rc) =>
-        country ? country.ruleIds.includes(rc.rule.id) : false,
-      ),
-    [snap, country],
-  );
+  const applicableRules = useMemo(() => {
+    const countryRuleIds = new Set(country?.ruleIds ?? []);
+    return (snap?.rules ?? []).filter((rc) => countryRuleIds.has(rc.rule.id));
+  }, [snap, country]);
   const primaryRule: RuleComputation | undefined =
     applicableRules.find((rc) => rc.rule.id === country?.primaryRuleId) ??
     applicableRules[0];
@@ -131,11 +128,10 @@ export default function CountryRoute() {
   const name = countryName(code, locale);
   const here = country?.here ?? false;
   const tracked = snap.profile.trackedCountries.includes(code);
-  const sortedExits = ledger
-    .filter((s) => s.exitDate && s.status === "confirmed")
-    .map((s) => s.exitDate as string)
-    .sort();
-  const lastExit = sortedExits[sortedExits.length - 1];
+  const lastExit = ledger.reduce<string | undefined>((latest, stay) => {
+    if (stay.status !== "confirmed" || !stay.exitDate) return latest;
+    return !latest || stay.exitDate > latest ? stay.exitDate : latest;
+  }, undefined);
 
   const statusLine = here
     ? t("nomad.country.currentlyHere", {
@@ -200,6 +196,7 @@ export default function CountryRoute() {
                   isDemo
                     ? `nomad-demo-presence-log-${code}.csv`
                     : `presence-log-${code}.csv`,
+                  snap.today,
                 )
               }
             >

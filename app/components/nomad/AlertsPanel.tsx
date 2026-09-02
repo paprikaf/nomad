@@ -5,6 +5,7 @@ import {
   IconCircleCheck,
   IconMailFast,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
 
 import { countryFlag, countryName } from "../../../shared/countries";
 import type { ComplianceAlert } from "../../../shared/types";
+import { MailEvidence } from "./MailEvidence";
 
 export function alertTitle(
   alert: ComplianceAlert,
@@ -147,6 +149,16 @@ export function AlertsPanel({
                 <div className="text-xs text-muted-foreground">
                   {alertBody(alert, t)}
                 </div>
+                {alert.kind === "pending-stay" && (
+                  <MailEvidence
+                    account={stringData(alert, "sourceAccount")}
+                    messageId={stringData(alert, "sourceMessageId")}
+                    threadId={stringData(alert, "sourceThreadId")}
+                    kind={mailEvidenceKind(alert.data.evidenceKind)}
+                    provider={stringData(alert, "evidenceProvider")}
+                    confidence={numberData(alert, "evidenceConfidence")}
+                  />
+                )}
                 {alert.kind === "pending-stay" && alert.stayId && (
                   <div className="mt-2 flex gap-2">
                     <Button
@@ -156,13 +168,17 @@ export function AlertsPanel({
                       title={
                         disabled ? t("nomad.demo.disabledHint") : undefined
                       }
-                      onClick={() =>
-                        alert.stayId &&
-                        confirmStay.mutate({
-                          id: alert.stayId,
-                          status: "confirmed",
-                        })
-                      }
+                      onClick={() => {
+                        if (!alert.stayId) return;
+                        confirmStay.mutate(
+                          { id: alert.stayId, status: "confirmed" },
+                          {
+                            onSuccess: () =>
+                              toast.success(t("nomad.alerts.confirmed")),
+                            onError: showMutationError,
+                          },
+                        );
+                      }}
                     >
                       {t("nomad.cockpit.confirm")}
                     </Button>
@@ -174,9 +190,17 @@ export function AlertsPanel({
                       title={
                         disabled ? t("nomad.demo.disabledHint") : undefined
                       }
-                      onClick={() =>
-                        alert.stayId && discardStay.mutate({ id: alert.stayId })
-                      }
+                      onClick={() => {
+                        if (!alert.stayId) return;
+                        discardStay.mutate(
+                          { id: alert.stayId },
+                          {
+                            onSuccess: () =>
+                              toast.success(t("nomad.alerts.discarded")),
+                            onError: showMutationError,
+                          },
+                        );
+                      }}
                     >
                       {t("nomad.cockpit.discard")}
                     </Button>
@@ -189,4 +213,28 @@ export function AlertsPanel({
       )}
     </div>
   );
+}
+
+function stringData(alert: ComplianceAlert, key: string): string | undefined {
+  const value = alert.data[key];
+  return typeof value === "string" && value ? value : undefined;
+}
+
+function numberData(alert: ComplianceAlert, key: string): number | undefined {
+  const value = alert.data[key];
+  return typeof value === "number" ? value : undefined;
+}
+
+function mailEvidenceKind(value: unknown) {
+  return value === "flight" ||
+    value === "rail" ||
+    value === "accommodation" ||
+    value === "visa" ||
+    value === "entry"
+    ? value
+    : undefined;
+}
+
+function showMutationError(error: unknown): void {
+  toast.error(error instanceof Error ? error.message : String(error));
 }

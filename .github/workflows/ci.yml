@@ -6,6 +6,11 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      # Build-time validation needs production-shaped values, but CI never
+      # connects to this deliberately non-routable placeholder database.
+      DATABASE_URL: postgresql://ci_user:ci_password@db.example.invalid:5432/nomad_ci
+      BETTER_AUTH_SECRET: ci-only-placeholder-not-for-production-000000000000
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -17,3 +22,74 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  community-scaffold:
+    runs-on: ubuntu-latest
+    env:
+      COMMUNITY_REPOSITORY: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+      COMMUNITY_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Scaffold and verify the public community template
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          smoke_root="$RUNNER_TEMP/nomad-community-template"
+          smoke_app="$smoke_root/travel-ledger-smoke"
+          smoke_db="$RUNNER_TEMP/nomad-community-template.db"
+
+          mkdir -p "$smoke_root"
+          cd "$smoke_root"
+          # Match the exact public installation path documented in README.
+          # The separate `check` job covers this repo's pinned Core version.
+          npx --yes "@agent-native/core@latest" create travel-ledger-smoke \
+            --template "community:$COMMUNITY_REPOSITORY#$COMMUNITY_REF"
+
+          cd "$smoke_app"
+          pnpm install --no-frozen-lockfile
+          node <<'NODE'
+          const fs = require("node:fs");
+          const packageJson = require("./package.json");
+          const manifest = require("./public/manifest.json");
+          const router = require("./node_modules/react-router/package.json");
+
+          if (!packageJson.scripts?.["migrate:production"]) {
+            throw new Error("Missing migrate:production script");
+          }
+          if (packageJson.name !== "travel-ledger-smoke") {
+            throw new Error("Scaffold package identity was not rewritten");
+          }
+          if (
+            packageJson.description.includes("travel-ledger-smokes") ||
+            manifest.description.includes("travel-ledger-smokes")
+          ) {
+            throw new Error("Scaffold identity rewrite corrupted a description");
+          }
+          if (router.version !== "8.3.1") {
+            throw new Error(`Expected patched react-router 8.3.1, got ${router.version}`);
+          }
+          for (const logo of [
+            "agent-native-icon-light.svg",
+            "agent-native-icon-dark.svg",
+            "agent-native-logo-light.svg",
+            "agent-native-logo-dark.svg",
+          ]) {
+            if (!fs.existsSync(`public/${logo}`)) {
+              throw new Error(`Missing retained Agent Native logo: ${logo}`);
+            }
+          }
+          NODE
+
+          export BETTER_AUTH_SECRET="ci-only-placeholder-not-for-production-000000000000"
+          export DATABASE_URL="postgresql://ci_user:ci_password@db.example.invalid:5432/nomad_ci"
+
+          pnpm typecheck
+          pnpm test
+          DATABASE_URL="file:$smoke_db" pnpm migrate:production
+          DATABASE_URL="postgresql://ci_user:ci_password@db.example.invalid:5432/nomad_ci" pnpm build

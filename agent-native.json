@@ -4,6 +4,6 @@
     "firstRun": "off"
   },
   "doctor": {
-    "failOnBuild": false
+    "failOnBuild": true
   }
 }

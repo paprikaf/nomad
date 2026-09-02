@@ -1,7 +1,7 @@
 {
   "name": "Nomad",
   "short_name": "Nomad",
-  "description": "Residency and tax compliance cockpit for digital nomads.",
+  "description": "Travel-presence and tax-day compliance cockpit for globally mobile people.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F7F9FA",

@@ -3,6 +3,7 @@ import { useDemoModeStatus } from "@agent-native/core/client/hooks";
 import { useMemo } from "react";
 
 import type { ComplianceSnapshot } from "../../shared/types";
+import { useBrowserTimeZone } from "./browser-time-zone";
 import { getDemoComplianceSnapshot } from "./demo-snapshot";
 
 /**
@@ -14,7 +15,12 @@ import { getDemoComplianceSnapshot } from "./demo-snapshot";
  * this substitution happens only here, at render time.
  */
 export function useComplianceSnapshot() {
-  const query = useActionQuery<ComplianceSnapshot>("compliance-status", {});
+  const timeZone = useBrowserTimeZone();
+  const query = useActionQuery<ComplianceSnapshot>(
+    "compliance-status",
+    timeZone ? { timeZone } : {},
+    { enabled: timeZone !== null },
+  );
   const { enabled: isDemo } = useDemoModeStatus();
   const real = query.data;
 

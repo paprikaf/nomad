@@ -18,7 +18,7 @@ import { getDb } from "../server/db/index.js";
 import { rules, stays, visas } from "../server/db/schema.js";
 import { requireOwner } from "../server/lib/owner.js";
 import { getProfile } from "../server/lib/profile.js";
-import { computeSnapshot } from "../shared/compliance.js";
+import { computeSnapshot, todayISO } from "../shared/compliance.js";
 import type { Rule, Stay, Visa } from "../shared/types.js";
 
 export default defineAction({
@@ -46,11 +46,12 @@ export default defineAction({
         stayRows as Stay[],
         ruleRows as Rule[],
         profile,
-        undefined,
+        todayISO(new Date(), profile.timeZone),
         visaRows as Visa[],
       );
       screen.compliance = {
         today: snapshot.today,
+        timeZone: snapshot.profile.timeZone,
         currentLocation: snapshot.currentLocation,
         citizenshipCountry: snapshot.profile.citizenshipCountry,
         immigrationStatus: snapshot.profile.immigrationStatus,

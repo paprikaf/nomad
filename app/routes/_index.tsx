@@ -310,6 +310,7 @@ export default function CockpitRoute() {
               downloadPresenceCsv(
                 [...snap.trips, ...snap.pendingStays],
                 isDemo ? "nomad-demo-presence-log.csv" : "presence-log.csv",
+                snap.today,
               )
             }
           />

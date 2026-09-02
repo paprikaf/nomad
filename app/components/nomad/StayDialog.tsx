@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 
 import type { Stay } from "../../../shared/types";
 import { CountryPicker } from "./CountryPicker";
+import { MailEvidence } from "./MailEvidence";
 
 /**
  * Add/edit a presence-ledger stay. Editing a pending inbox-detected stay also
@@ -91,6 +92,16 @@ export function StayDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
+          {stay?.source === "inbox" && (
+            <MailEvidence
+              account={stay.sourceAccount}
+              messageId={stay.sourceMessageId}
+              threadId={stay.sourceThreadId}
+              kind={stay.evidenceKind}
+              provider={stay.evidenceProvider}
+              confidence={stay.evidenceConfidence}
+            />
+          )}
           <div className="grid gap-2">
             <Label>{t("nomad.stay.country")}</Label>
             <CountryPicker

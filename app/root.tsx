@@ -3,6 +3,7 @@ import { appPath } from "@agent-native/core/client/api-path";
 import {
   AppProviders,
   createAgentNativeQueryClient,
+  useActionMutation,
   useDbSync,
 } from "@agent-native/core/client/hooks";
 import { getLocaleInitScript, useT } from "@agent-native/core/client/i18n";
@@ -14,14 +15,16 @@ import { getThemeInitScript } from "@agent-native/core/client/ui";
 import { IconSun, IconMoon } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { LinksFunction } from "react-router";
+import { toast } from "sonner";
 
 import { Layout as AppLayout } from "@/components/layout/Layout";
 import { AppToolkitProvider } from "@/components/ui/toolkit-provider";
 import { useNavigationState } from "@/hooks/use-navigation-state";
 import { APP_TITLE } from "@/lib/app-config";
+import { browserTimeZone } from "@/lib/browser-time-zone";
 import { TAB_ID } from "@/lib/tab-id";
 
 import changelog from "../CHANGELOG.md?raw";
@@ -95,6 +98,42 @@ function DbSyncSetup() {
   return null;
 }
 
+/** Keep existing profiles aligned with the browser currently using Nomad. */
+function BrowserTimeZoneSync() {
+  const { mutateAsync } = useActionMutation("update-profile");
+  const t = useT();
+  const attempted = useRef(false);
+  useEffect(() => {
+    if (attempted.current) return;
+    attempted.current = true;
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    async function sync(attempt: number): Promise<void> {
+      try {
+        await mutateAsync({ timeZone: browserTimeZone() });
+      } catch {
+        if (cancelled) return;
+        if (attempt < 2) {
+          retryTimer = setTimeout(
+            () => void sync(attempt + 1),
+            250 * 2 ** attempt,
+          );
+          return;
+        }
+        toast.error(t("nomad.cockpit.timeZoneSyncError"));
+      }
+    }
+
+    void sync(0);
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [mutateAsync, t]);
+  return null;
+}
+
 function ThemeToggleItem() {
   const { resolvedTheme, setTheme } = useTheme();
   const t = useT();
@@ -144,6 +183,7 @@ export default function Root() {
     <AppToolkitProvider>
       <AppProviders queryClient={queryClient} i18n={{ catalog: i18nCatalog }}>
         <DbSyncSetup />
+        <BrowserTimeZoneSync />
         <AppContent />
       </AppProviders>
     </AppToolkitProvider>
