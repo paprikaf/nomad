@@ -78,6 +78,9 @@ The included `netlify.toml` runs `pnpm migrate:production` after a successful
 production build. On another host, add that command to its release phase rather
 than running migrations on the first request.
 
+See [Netlify idle compute](docs/netlify-idle-compute.md) for the polling policy,
+the idle-stream diagnosis, and verification required before changing it.
+
 Do not use `AUTH_DISABLED` for a public or shared preview. A future anonymous
 demo should use a server-enforced, read-only sample-data boundary.
 

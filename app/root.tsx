@@ -25,6 +25,7 @@ import { AppToolkitProvider } from "@/components/ui/toolkit-provider";
 import { useNavigationState } from "@/hooks/use-navigation-state";
 import { APP_TITLE } from "@/lib/app-config";
 import { browserTimeZone } from "@/lib/browser-time-zone";
+import { netlifySyncOptions } from "@/lib/netlify-sync";
 import { TAB_ID } from "@/lib/tab-id";
 
 import changelog from "../CHANGELOG.md?raw";
@@ -92,6 +93,7 @@ function DbSyncSetup() {
   const qc = useQueryClient();
   useNavigationState();
   useDbSync({
+    ...netlifySyncOptions,
     queryClient: qc,
     ignoreSource: TAB_ID,
   });

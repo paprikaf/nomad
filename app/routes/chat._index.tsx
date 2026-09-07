@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { APP_TITLE } from "@/lib/app-config";
+import { netlifyChatPollingOptions } from "@/lib/netlify-sync";
 import { TAB_ID } from "@/lib/tab-id";
 
 const SEO_TITLE = `${APP_TITLE} — Ask the compliance agent`;
@@ -51,6 +52,7 @@ export default function ChatRoute() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <AgentChatSurface
+        {...netlifyChatPollingOptions}
         mode="page"
         chatViewTransition
         className="h-full"

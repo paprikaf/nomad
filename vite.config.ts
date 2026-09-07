@@ -12,8 +12,18 @@ const appRequire = createRequire(import.meta.url);
 const coreRequire = createRequire(
   appRequire.resolve("@agent-native/core/vite"),
 );
+const netlifyTarget =
+  // guard:allow-env-credential — NITRO_PRESET is the build target, not a user credential.
+  process.env.NITRO_PRESET?.startsWith("netlify") ??
+  process.env.NETLIFY === "true";
 
 export default defineConfig({
+  define: {
+    // Netlify builds include previews. Match the server's compiled Nitro preset.
+    "import.meta.env.VITE_NOMAD_NETLIFY_SYNC": JSON.stringify(
+      netlifyTarget ? "true" : "false",
+    ),
+  },
   resolve: {
     // Core and Toolkit both use Assistant UI contexts. Force one published
     // instance so chat state and the contextual sidebar share the same store.
